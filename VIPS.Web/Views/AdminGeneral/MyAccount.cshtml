@@ -1,0 +1,54 @@
+@{
+    Layout = "_AdminLayout";
+}
+
+<h2>Administrar mi cuenta</h2>
+
+
+
+<a class="btn-principal" asp-controller="Auth" asp-action="ChangePasswordAccount">Cambiar Contraseña</a>
+
+@if (TempData["ErrorMessageChange"] != null)
+ {
+<div class="alert alert-danger">
+    <p style="color:red;">@TempData["ErrorMessageChange"]</p>
+</div>
+ }
+
+@if (TempData["SuccessMessageChange"] != null)
+ {
+<div class="alert alert-danger">
+    <p style="color:green;">@TempData["SuccessMessageChange"]</p>
+</div>
+ }
+
+
+
+
+<form asp-controller="AdminGeneral" asp-action="" method="post" style="width: 230px; margin-top: 61px;">
+    @Html.AntiForgeryToken()
+
+
+    <div class="form-group">
+        <label for="language">Seleccionar idioma interfaz</label>
+        <select id="language" name="language" required>
+            <option value="es">Español</option>
+            <option value="en">Ingles</option>
+        </select>
+        <span class="field-validation-error" data-valmsg-for="IdRol" data-valmsg-replace="true"></span>
+    </div>
+
+
+    <button type="submit" class="btn-principal">Cambiar  idioma</button>
+
+
+    @if (TempData["ErrorMessageChangeLanguage"] != null)
+     {
+        <div class="alert alert-danger">
+            <p style="color:red;">@TempData["ErrorMessageChangeLanguage"]</p>
+        </div>
+     }
+
+</form>
+
+

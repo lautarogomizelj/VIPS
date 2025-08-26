@@ -116,7 +116,7 @@ namespace VIPS.Web.Controllers
 
                 // Verificar si el DNI ya existe
 
-                var usuarioExistente = await _userService.VerificarUsuarioExistente(usuarioModel.Dni);
+                var usuarioExistente = _userService.VerificarUsuarioExistente(usuarioModel.Dni);
                 if (usuarioExistente)
                 {
                     ModelState.AddModelError("Usuario", "Usuario invalido, ingrese devuelta.");
@@ -125,7 +125,7 @@ namespace VIPS.Web.Controllers
                 }
 
                 // Verificar si el DNI ya existe
-                var dniExistente = await _userService.VerificarDniExistente(usuarioModel.Dni);
+                var dniExistente = _userService.VerificarDniExistente(usuarioModel.Dni);
                 if (dniExistente)
                 {
                     ModelState.AddModelError("Dni", "Dni invalido, ingrese devuelta");
@@ -134,7 +134,7 @@ namespace VIPS.Web.Controllers
                 }
 
                 // Verificar si el email ya existe
-                var emailExistente = await _userService.VerificarEmailExistente(usuarioModel.Email);
+                var emailExistente = _userService.VerificarEmailExistente(usuarioModel.Email);
                 if (emailExistente)
                 {
                     ModelState.AddModelError("Email", "Email invalido, ingrese devuelta");
@@ -350,6 +350,9 @@ namespace VIPS.Web.Controllers
         }
 
 
-
+        public IActionResult MyAccount()
+        {
+            return View();
+        }
     }
 }

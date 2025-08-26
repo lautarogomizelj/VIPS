@@ -245,85 +245,104 @@ namespace VIPS.Web.Services
             }
         }*/
 
-        public async Task<bool> VerificarDniExistente(string dni)
+        public bool VerificarDniExistente(string dni)
         {
             var query = "SELECT COUNT(1) FROM Usuario WHERE dni = @dni";
             using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
-            await connection.OpenAsync();
+            connection.OpenAsync();
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@dni", dni);
 
-            var count = (int)await command.ExecuteScalarAsync();
+            var count = (int) command.ExecuteScalar();
             return count > 0;
         }
 
-        public async Task<bool> VerificarEmailExistente(string email)
+        public bool VerificarEmailExistente(string email)
         {
             var query = "SELECT COUNT(1) FROM Usuario WHERE email = @email";
             using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
-            await connection.OpenAsync();
+            connection.Open();
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@email", email);
 
-            var count = (int)await command.ExecuteScalarAsync();
+            var count = (int) command.ExecuteScalar();
             return count > 0;
         }
 
-        public async Task<bool> VerificarUsuarioExistente(string usuario)
+        public bool VerificarUsuarioExistente(string usuario)
         {
             var query = "SELECT COUNT(1) FROM Usuario WHERE usuario = @usuario";
             using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
-            await connection.OpenAsync();
+            connection.Open();
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@usuario", usuario);
 
-            var count = (int)await command.ExecuteScalarAsync();
+            var count = (int) command.ExecuteScalar();
             return count > 0;
         }
 
 
-        public async Task<int?> RetornarIdUsuarioConEmail(string email)
+        public int RetornarIdUsuarioConEmail(string email)
         {
-            string query = @"SELECT Id FROM Usuario WHERE email = @correo";
+            string query = @"SELECT idUsuario FROM Usuario WHERE email = @correo";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
             command.Parameters.AddWithValue("@correo", email);
 
-            await conn.OpenAsync();
-            object? result = await command.ExecuteScalarAsync();
+            conn.Open();
+            object? result = command.ExecuteScalar();
 
             if (result != null && int.TryParse(result.ToString(), out int idUsuario))
             {
                 return idUsuario;
             }
 
-            return null; // si no encuentra el usuario
+            return -1; // si no encuentra el usuario
         }
 
-        public async Task<int?> RetornarIdUsuarioConToken(string token)
+        public int RetornarIdUsuarioConUsuario(string usuario)
         {
-            string query = @"SELECT idUsuario FROM Usuario WHERE token = @token";
+            string query = @"SELECT idUsuario FROM Usuario WHERE usuario = @usuario";
+
+            using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+            using var command = new SqlCommand(query, conn);
+            command.Parameters.AddWithValue("@usuario", usuario);
+
+            conn.Open();
+            object? result = command.ExecuteScalar();
+
+            if (result != null && int.TryParse(result.ToString(), out int idUsuario))
+            {
+                return idUsuario;
+            }
+
+            return -1; // si no encuentra el usuario
+        }
+
+        public int RetornarIdUsuarioConToken(string token)
+        {
+            string query = @"SELECT u.idUsuario FROM Usuario u inner join RecuperacionContrasenia r on r.idUsuario = u.idUsuario WHERE token = @token";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
             command.Parameters.AddWithValue("@token", token);
 
-            await conn.OpenAsync();
-            object? result = await command.ExecuteScalarAsync();
+            conn.Open();
+            object? result = command.ExecuteScalar();
 
             if (result != null && int.TryParse(result.ToString(), out int idUsuario))
             {
                 return idUsuario;
             }
 
-            return null; // si no encuentra el usuario
+            return -1; // si no encuentra el usuario
         }
 
-        public async Task<string?> RetornarUsuarioConToken(string token)
+        public string? RetornarUsuarioConToken(string token)
         {
             string query = @"SELECT usuario FROM Usuario u inner join RecuperacionContrasenia r on r.idUsuario = u.idUsuario WHERE token = @token";
 
@@ -331,12 +350,25 @@ namespace VIPS.Web.Services
             using var command = new SqlCommand(query, conn);
             command.Parameters.AddWithValue("@token", token);
 
-            await conn.OpenAsync();
-            object? result = await command.ExecuteScalarAsync();
+            conn.Open();
+            object? result = command.ExecuteScalarAsync();
 
             return result?.ToString(); // devuelve el string o null si no encuentra nada
         }
 
+        public string? RetornarUsuarioConEmail(string email)
+        {
+            string query = @"SELECT usuario FROM Usuario WHERE email = @email";
+
+            using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+            using var command = new SqlCommand(query, conn);
+            command.Parameters.AddWithValue("@email", email);
+
+            conn.Open();
+            object? result = command.ExecuteScalar();
+
+            return result?.ToString(); // devuelve el string o null si no encuentra nada
+        }
 
         public async Task GuardarTokenRestablecimiento(int idUsuario, string token, DateTime expiracion)
         {
@@ -377,21 +409,33 @@ namespace VIPS.Web.Services
             await command.ExecuteNonQueryAsync();
         }
 
-        public async Task<bool> ValidarToken(string token)
+        public bool ValidarToken(string token)
         {
-            string query = @"SELECT COUNT(*) FROM RecuperacionContrasenia WHERE token = @token AND fechaExpiracion > GETUTCDATE()";
+            string query = @"SELECT COUNT(*) FROM RecuperacionContrasenia WHERE token = @token AND fechaExpiracion > GETUTCDATE() AND usado = 0";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
             command.Parameters.AddWithValue("@token", token);
 
-            await conn.OpenAsync();
-            int count = (int)await command.ExecuteScalarAsync();
+            conn.Open();
+            int count = (int) command.ExecuteScalar();
 
             return count > 0; // true si token válido
         }
 
+        public string? retornarContraseniaHashConUsuario(string username)
+        {
+             string query = @"SELECT contraseniaHash FROM Usuario WHERE usuario = @username";
 
+            using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+            using var command = new SqlCommand(query, conn);
+            command.Parameters.AddWithValue("@username", username);
+
+            conn.Open();
+            object? result = command.ExecuteScalar();
+
+            return result?.ToString(); // devuelve el string o null si no encuentra nada
+        }
 
     }
 }

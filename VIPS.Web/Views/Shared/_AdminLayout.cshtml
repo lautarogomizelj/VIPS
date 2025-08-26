@@ -32,7 +32,6 @@
             </div>
 
             <div class="dropdownContent">
-
                 <a asp-controller="Auth" asp-action="Logout"><span>Cerrar sesion</span></a>
             </div>
 
@@ -62,6 +61,9 @@
                 </li>
                 <li class="@(currentAction == "UpdateAndRestore" ? "active" : "")">
                     <a asp-controller="AdminGeneral" asp-action="UpdateAndRestore"><h3>Respaldos y restauraciones</h3></a>
+                </li>
+                <li class="@(currentAction == "MyAccount" ? "active" : "")">
+                    <a asp-controller="AdminGeneral" asp-action="MyAccount"><h3>Mi cuenta</h3></a>
                 </li>
             </ul>
 

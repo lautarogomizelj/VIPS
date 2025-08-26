@@ -44,7 +44,6 @@ builder.Services.AddSingleton(new EmailService(
     fromName: "Soporte VIPS"
 ));
 
-builder.Services.AddScoped<EmailService>();
 
 var app = builder.Build();
 

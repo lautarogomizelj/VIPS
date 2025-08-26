@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
+using System;
 
 namespace VIPS.Web.Services
 {
@@ -23,7 +24,7 @@ namespace VIPS.Web.Services
             _fromName = fromName;
         }
 
-        public async Task<bool> EnviarCorreoAsync(string correoDestino, string asunto, string cuerpoHtml)
+        public async Task<bool> EnviarCorreo(string correoDestino, string asunto, string cuerpoHtml)
         {
             try
             {

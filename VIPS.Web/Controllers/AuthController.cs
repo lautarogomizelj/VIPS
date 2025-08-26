@@ -1,11 +1,13 @@
 ﻿using System.ComponentModel;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using VIPS.Web.Attributes;
 using Microsoft.Data.SqlClient;
 using VIPS.Web.Services;
 using System.Security.Claims; 
-using System.Data; 
+using System.Data;
 
 namespace VIPS.Web.Controllers
 {
@@ -164,46 +166,56 @@ namespace VIPS.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult RestorePassword(string correo)
+        public async Task<IActionResult> RestorePassword(string correo)
         {
-            // 1. Validar que el correo exista
-            bool correoValido = _userService.VerificarEmailExistente(correo);
-
-            // 2. Para seguridad, no revelamos si existe o no
-            // Mostramos el mismo mensaje siempre
-            string mensaje = "Si el correo está registrado, recibirás un enlace de recuperación.";
-
-            if (correoValido)
+            if (!string.IsNullOrEmpty(correo))
             {
-                // 3. Generar token seguro
-                string token = Guid.NewGuid().ToString();
-
-                // 4. Guardar token y fecha de expiración en la base de datos
-                _userService.GuardarTokenRestablecimiento(_userService.RetornarIdUsuarioConEmail(correo), token, DateTime.UtcNow.AddMinutes(60));
-
-                // 5. Enviar correo con enlace
-                string enlace = Url.Action("ResetPassword", "Auth", new { token = token }, Request.Scheme);
+                // 1. Validar que el correo exista
+                bool correoValido = _userService.VerificarEmailExistente(correo);
 
 
-                // 6. Enviar correo
-                string cuerpo = $@"
-                    <p>Hola,</p>
-                    <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
-                    <p>Haz clic en el siguiente enlace para cambiar tu contraseña:</p>
-                    <p><a href='{enlace}'>{enlace}</a></p>
-                    <p>Si no solicitaste esto, ignora este correo. El enlace expirará en 60 minutos.</p>";
+                // 2. Para seguridad, no revelamos si existe o no
+                // Mostramos el mismo mensaje siempre
+                TempData["Message"] = "Si el correo está registrado, recibirás un enlace de recuperación.";
 
-                _emailService.EnviarCorreoAsync(correo, "Recuperación de Contraseña", cuerpo);
+                if (correoValido)
+                {
+                    // 3. Generar token seguro
+                    string token = Guid.NewGuid().ToString();
 
-                 string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
-                _logService.AgregarLog(_userService.RetornarUsuarioConEmail(correo), DateTime.Now, "Recuperar contraseña", "Envio de token para la recuperacion de contraseña", ipAddress);
+                    // 4. Guardar token y fecha de expiración en la base de datos
+                    _userService.GuardarTokenRestablecimiento(_userService.RetornarIdUsuarioConEmail(correo), token, DateTime.UtcNow.AddMinutes(60));
+
+                    // 5. Enviar correo con enlace
+                    string enlace = Url.Action("ResetPassword", "Auth", new { token = token }, Request.Scheme);
+
+                    // 6. Enviar correo
+                    string cuerpo = $@"
+                        <p>Hola,</p>
+                        <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+                        <p>Haz clic en el siguiente enlace para cambiar tu contraseña:</p>
+                        <p><a href='{enlace}'>{enlace}</a></p>
+                        <p>Si no solicitaste esto, ignora este correo. El enlace expirará en 60 minutos.</p>";
+
+                    bool conf = await _emailService.EnviarCorreo(correo, "Recuperación de Contraseña", cuerpo);
+
+                    string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                    _logService.AgregarLog(_userService.RetornarUsuarioConEmail(correo), DateTime.Now, "Recuperar contraseña", "Envio de token para la recuperacion de contraseña", ipAddress);
+                }
             }
 
-            return View("RestorePassword", mensaje);
+            return View("RestorePassword");
+
         }
 
+        //validar que el token exista, aunque tenga validaciones de logica, si el token no es valido que ni entre a la pagina
         public IActionResult ResetPassword(string token)
         {
+            if (string.IsNullOrEmpty(token) || !_userService.ValidarToken(token))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
             // podés pasar el token a la vista
             return View(model: token);
         }
@@ -212,10 +224,9 @@ namespace VIPS.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(string token, string nuevaPassword, string confirmarPassword)
         {
-            if (string.IsNullOrEmpty(token) || !await _userService.ValidarToken(token))
+            if (string.IsNullOrEmpty(token) || !_userService.ValidarToken(token))
             {
-                TempData["ErrorMessage"] = "Token inválido.";
-                return View();
+                return RedirectToAction("Login", "Auth");
             }
 
             if (nuevaPassword != confirmarPassword)
@@ -225,12 +236,13 @@ namespace VIPS.Web.Controllers
             }
 
             // 1️ Validar token y obtener idUsuario
-            int? idUsuario = await _userService.RetornarIdUsuarioConToken(token);
-            if (!idUsuario.HasValue)
+            int idUsuario = _userService.RetornarIdUsuarioConToken(token);
+            if (idUsuario == -1)
             {
                 TempData["ErrorMessage"] = "Token inválido o expirado.";
                 return View();
             }
+
 
             string contraseniaHash = _hashService.HashPassword(nuevaPassword); 
 
@@ -246,6 +258,69 @@ namespace VIPS.Web.Controllers
 
             return RedirectToAction("Login", "Auth");
         }
+
+
+        public IActionResult ChangePasswordAccount()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePasswordAccount(string passwordActual, string nuevaPassword, string confirmarPassword)
+        {
+            if (string.IsNullOrEmpty(passwordActual) || string.IsNullOrEmpty(nuevaPassword) || string.IsNullOrEmpty(confirmarPassword))
+            {
+                TempData["ErrorMessageChange"] = "Completa los inputs.";
+                return View();
+            }
+           
+            if (nuevaPassword != confirmarPassword)
+            {
+                TempData["ErrorMessageChange"] = "Las contraseñas no coinciden.";
+                return View();
+            }
+
+
+            string usuario = User.FindFirstValue(ClaimTypes.Name);
+
+            if (!_hashService.VerifyPassword(passwordActual, _userService.retornarContraseniaHashConUsuario(usuario)))
+            {
+                TempData["ErrorMessageChange"] = "La contraseña actual es incorrecta.";
+                return View();
+            }
+
+            var hash = _hashService.HashPassword(nuevaPassword);
+            await _userService.ActualizarPassword(_userService.RetornarIdUsuarioConUsuario(usuario), hash);
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(usuario, DateTime.Now, "Cambio de contraseña", "Contraseña cambiada correctamente", ipAddress);
+
+            TempData["SuccessMessageChange"] = "Tu contraseña ha sido cambiada con éxito.";
+
+            return RedirectToAction("ReturnToPanel", "Auth");
+           
+        }
+
+        [Authorize]
+        public IActionResult ReturnToPanel()
+        { 
+            if (User.IsInRole("adminGeneral"))
+                return RedirectToAction("MyAccount", "AdminGeneral");
+
+            if (User.IsInRole("adminLogistico"))
+                return RedirectToAction("MyAccount", "AdminLogistico");
+
+            if (User.IsInRole("adminVentas"))
+                return RedirectToAction("MyAccount", "AdminVentas");
+
+            // fallback
+            return RedirectToAction("Login", "Auth");
+        }
+
+
+
 
 
         public async Task<IActionResult> Logout()
