@@ -1,0 +1,89 @@
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin panel - VIPS</title>
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="flex">
+        <img src="~/images/logo.png" alt="Logo empresa VIPS">
+
+        <h1>Admin panel - VIPS</h1>
+
+
+        <div class="contenedorUsuario flex">
+            <div class="left">
+                <span>@ViewBag.NombreUsuario</span>
+            </div>
+            <div class="right">
+
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g id="SVGRepo_bgCarrier" stroke-width="0" />
+                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"
+                    <g id="SVGRepo_iconCarrier"> <path d="M5 21C5 17.134 8.13401 14 12 14C15.866 14 19 17.134 19 21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="#162938" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /> </g>
+                </svg>
+            </div>
+
+            <div class="dropdownContent">
+
+                <a asp-controller="Auth" asp-action="Logout"><span>Cerrar sesion</span></a>
+            </div>
+
+        </div>
+    </header>
+
+
+
+    <main>
+        <section class="index flex">
+
+            <ul class="primary-navigation">
+                <li class="@(currentAction == "Index" ? "active" : "")">
+                    <a asp-controller="AdminGeneral" asp-action="Index"><h3>Inicio</h3></a>
+                </li>
+                <li class="@(currentAction == "UserManagement" ? "active" : "")">
+                    <a asp-controller="AdminGeneral" asp-action="UserManagement"><h3>Gestión de usuarios</h3></a>
+                </li>
+                <li class="@(currentAction == "OrderManagement" ? "active" : "")">
+                    <a asp-controller="AdminGeneral" asp-action="OrderManagement"><h3>Gestión de pedidos</h3></a>
+                </li>
+                <li class="@(currentAction == "FleetManagement" ? "active" : "")">
+                    <a asp-controller="AdminGeneral" asp-action="FleetManagement"><h3>Gestión de flota</h3></a>
+                </li>
+                <li class="@(currentAction == "SystemLogs" ? "active" : "")">
+                    <a asp-controller="AdminGeneral" asp-action="SystemLogs"><h3>Logs del sistema</h3></a>
+                </li>
+                <li class="@(currentAction == "UpdateAndRestore" ? "active" : "")">
+                    <a asp-controller="AdminGeneral" asp-action="UpdateAndRestore"><h3>Respaldos y restauraciones</h3></a>
+                </li>
+            </ul>
+
+            <div class="general-container">
+
+                <div class="information-container">
+                    @RenderBody()
+                </div>
+
+            </div>
+
+
+
+        </section>
+
+    </main>
+
+
+    <footer></footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+
+</html>

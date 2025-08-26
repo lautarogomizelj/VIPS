@@ -1,0 +1,44 @@
+﻿@{
+    Layout = "_LoginLayout";
+    ViewData["title"] = "Iniciar sesion";
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+
+
+<section>
+    <form method="post" asp-controller="Auth" asp-action="Login">
+        <h3>Ingresar a cuenta</h3>
+        <div class="row-two">
+            <div class="grupo">
+                <label for="username">
+                    <span>Usuario</span>
+                </label>
+                <input type="text" name="username" maxlength="100" required>
+            </div>
+        </div>
+
+        <div class="row-two">
+            <div class="grupo">
+                <label for="password">
+                    <span>Contraseña</span>
+                </label>
+                <input type="password" name="password" maxlength="100" required>
+            </div>
+        </div>
+
+        <a asp-controller="Auth" asp-action="RestorePassword" class="restablecer">¿Olvidaste tu contraseña?</a>
+
+        <button class="btn-principal" type="submit" style="width:100% !important">Iniciar Sesion</button>
+
+        <br />
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+        <div>
+            <p class="error" style="color:red">
+                @errorMessage
+            </p>
+        </div>
+        }
+    </form>
+</section>
