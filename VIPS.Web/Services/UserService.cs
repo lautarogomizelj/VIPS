@@ -146,6 +146,44 @@ namespace VIPS.Web.Services
             }
         }
 
+
+        public UsuarioModelEdit? retornarUsuarioModelEditConIdUsuario(int idUsuario)
+        {
+            try
+            {
+                var query = $@"select idUsuario, usuario, dni, nombre, apellido, email, telefono, idRol from Usuario where idUsuario = @idUsuario";
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                connection.Open();
+
+                using var cmd = new SqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("@idUsuario", idUsuario);
+                using var reader = cmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    return new UsuarioModelEdit
+                    {
+                        IdUsuario = Convert.ToInt32(reader["idUsuario"]),
+                        Usuario = reader["usuario"].ToString(),
+                        Dni = reader["dni"].ToString(),
+                        Nombre = reader["nombre"].ToString(),
+                        Apellido = reader["apellido"].ToString(),
+                        Email = reader["email"].ToString(),
+                        Telefono = reader["telefono"].ToString(),
+                        IdRol = Convert.ToInt32(reader["idRol"])
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
         public ResultadoOperacion EliminarUsuario(String Usuario)
         {
             try
@@ -154,7 +192,7 @@ namespace VIPS.Web.Services
 
                 conn.Open();
 
-                string query = @"DELETE FROM Usuario WHERE usuario = @usuario)";
+                string query = @"DELETE FROM Usuario WHERE usuario = @usuario";
 
                 using var cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@usuario", Usuario);
@@ -255,6 +293,20 @@ namespace VIPS.Web.Services
             command.Parameters.AddWithValue("@dni", dni);
 
             var count = (int) command.ExecuteScalar();
+            return count > 0;
+        }
+
+        public bool EsAdminGeneral(int idRol)
+        {
+            var query = "SELECT COUNT(1) FROM Rol WHERE IdRol = @idRol AND Nombre = 'Admin General'";
+
+            using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+            connection.Open();
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@idRol", idRol);
+
+            var count = (int)command.ExecuteScalar();
             return count > 0;
         }
 
@@ -436,6 +488,99 @@ namespace VIPS.Web.Services
 
             return result?.ToString(); // devuelve el string o null si no encuentra nada
         }
+
+        public ConflictoUsuario ExisteConflicto(UsuarioModelEdit model)
+        {
+            var conflicto = new ConflictoUsuario();
+
+            // SQL: devolvemos flags 1/0 si hay conflicto en cada campo
+            string query = @"
+        SELECT 
+             ISNULL(MAX(CASE WHEN dni = @dni THEN 1 ELSE 0 END), 0) AS ConflictoDni,
+            ISNULL(MAX(CASE WHEN usuario = @usuario THEN 1 ELSE 0 END), 0) AS ConflictoUsuario,
+            ISNULL(MAX(CASE WHEN email = @correo THEN 1 ELSE 0 END), 0) AS ConflictoEmail,
+            ISNULL(MAX(CASE WHEN telefono = @telefono THEN 1 ELSE 0 END), 0) AS ConflictoTelefono
+        FROM Usuario
+        WHERE idUsuario <> @idUsuario
+          AND (dni = @dni OR usuario = @usuario OR email = @correo OR telefono = @telefono);";
+
+            using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+            connection.Open();
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@idUsuario", model.IdUsuario);
+            command.Parameters.AddWithValue("@dni", model.Dni ?? "");
+            command.Parameters.AddWithValue("@usuario", model.Usuario ?? "");
+            command.Parameters.AddWithValue("@correo", model.Email ?? "");
+            command.Parameters.AddWithValue("@telefono", model.Telefono ?? "");
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                conflicto.Dni = reader.GetInt32(0) == 1;
+                conflicto.Usuario = reader.GetInt32(1) == 1;
+                conflicto.Email = reader.GetInt32(2) == 1;
+                conflicto.Telefono = reader.GetInt32(3) == 1;
+            }
+
+            return conflicto;
+        }
+
+        public ResultadoOperacion UpdateUser(UsuarioModelEdit model)
+        {
+            var resultado = new ResultadoOperacion();
+
+            try
+            {
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                connection.Open();
+
+                string query = @"
+            UPDATE Usuario
+            SET 
+                usuario = @usuario,
+                email = @correo,
+                dni = @dni,
+                telefono = @telefono,
+                IdRol = @idRol,
+                nombre = @nombre,
+                apellido = @apellido
+            WHERE idUsuario = @idUsuario";
+
+                using var command = new SqlCommand(query, connection);
+
+                command.Parameters.AddWithValue("@usuario", model.Usuario ?? "");
+                command.Parameters.AddWithValue("@correo", model.Email ?? "");
+                command.Parameters.AddWithValue("@dni", model.Dni ?? "");
+                command.Parameters.AddWithValue("@telefono", model.Telefono ?? "");
+                command.Parameters.AddWithValue("@idRol", model.IdRol);
+                command.Parameters.AddWithValue("@idUsuario", model.IdUsuario);
+                command.Parameters.AddWithValue("@nombre", model.Nombre ?? "");
+                command.Parameters.AddWithValue("@apellido", model.Apellido ?? "");
+
+                int filasAfectadas = command.ExecuteNonQuery();
+
+                if (filasAfectadas > 0)
+                {
+                    resultado.Exito = true;
+                    resultado.Mensaje = "Usuario actualizado correctamente.";
+                }
+                else
+                {
+                    resultado.Exito = false;
+                    resultado.Mensaje = "No se encontró el usuario o no se realizaron cambios.";
+                }
+            }
+            catch (Exception ex)
+            {
+                resultado.Exito = false;
+                resultado.Mensaje = $"Error al actualizar el usuario: {ex.Message}";
+            }
+
+            return resultado;
+        }
+
+
 
     }
 }

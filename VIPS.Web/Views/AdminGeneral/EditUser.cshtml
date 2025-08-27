@@ -1,0 +1,84 @@
+@model VIPS.Web.Models.UsuarioModelEdit
+
+@{
+    Layout = "_AdminLayout";
+}
+
+<form asp-action="EditUser" asp-controller="AdminGeneral" method="post" style="width:400px;">
+    @Html.AntiForgeryToken()
+
+
+
+    <div>
+        <label for="Usuario">Usuario</label>
+        <input type="text" id="Usuario" name="Usuario"
+               value="@Model.Usuario"
+               placeholder="@Model.Usuario" required/>
+    </div>
+
+    <div>
+        <label for="Dni">DNI</label>
+        <input type="text" id="Dni" name="Dni"
+               value="@Model.Dni"
+               placeholder="@Model.Dni" required/>
+    </div>
+
+    <div>
+        <label for="Nombre">Nombre</label>
+        <input type="text" id="Nombre" name="Nombre"
+               value="@Model.Nombre"
+               placeholder="@Model.Nombre" required/>
+    <input type="hidden" name="IdUsuario" value="@Model.IdUsuario"/>
+    </div>
+
+    <div>
+        <label for="Apellido">Apellido</label>
+        <input type="text" id="Apellido" name="Apellido"
+               value="@Model.Apellido"
+               placeholder="@Model.Apellido"/>
+    </div>
+
+    <div>
+        <label for="Email">Email</label>
+        <input type="email" id="Email" name="Email"
+               value="@Model.Email"
+               placeholder="@Model.Email"/>
+    </div>
+
+    <div>
+        <label for="Telefono">Teléfono</label>
+        <input type="text" id="Telefono" name="Telefono"
+               value="@Model.Telefono"
+               placeholder="@Model.Telefono"/>
+    </div>
+
+    <div class="form-group">
+        <label for="IdRol">Rol</label>
+        <select id="IdRol" name="IdRol">
+            <option value="">Seleccione un rol</option>
+            @foreach (var rol in ViewBag.Roles)
+            {
+                if(rol.IdRol == Model.IdRol){
+            <option value="@Model.IdRol" selected>@rol.Nombre</option>
+                }
+                else{
+            <option value="@rol.IdRol">@rol.Nombre</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn-principal">Confirmar cambios</button>
+        <a class="btn-secondary" asp-controller="AdminGeneral" asp-action="UserManagement">Volver</a>
+    </div>
+
+    @if (TempData["ErrorMessageEditUser"] != null)
+     {
+    <div class="alert alert-danger">
+        <p style="color:red;">@TempData["ErrorMessageEditUser"]</p>
+    </div>
+     }
+
+
+</form>

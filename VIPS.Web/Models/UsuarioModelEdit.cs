@@ -1,6 +1,6 @@
 namespace VIPS.Web.Models
 {
-    public class UsuarioModel
+    public class UsuarioModelEdit
     {
         public int IdUsuario { get; set; }
 
@@ -15,10 +15,6 @@ namespace VIPS.Web.Models
         public string Email { get; set; }
 
         public string Telefono { get; set; }
-
-        public string? TelefonoEmergencia { get; set; }
-
-        public string Contrasenia { get; set; }
 
         public int IdRol { get; set; }
     }

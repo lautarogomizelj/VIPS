@@ -1,7 +1,7 @@
 @model VIPS.Web.Models.UsuarioModel
 
 @{
-    Layout = "";
+    Layout = "_AdminLayout";
 }
 
 <h2>Agregar Nuevo Usuario</h2>
@@ -9,14 +9,10 @@
 <form id="formAgregarUsuario" asp-controller="AdminGeneral" asp-action="CreateUser" method="post">
     @Html.AntiForgeryToken()
 
-    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
     <div class="form-row">
         <div class="form-group">
             <label for="Usuario">Usuario*</label>
             <input type="text" id="Usuario" name="Usuario" required>
-            <span class="field-validation-error" data-valmsg-for="Usuario" data-valmsg-replace="true"></span>
-
         </div>
     </div>
 
@@ -24,15 +20,11 @@
         <div class="form-group">
             <label for="Dni">DNI *</label>
             <input type="text" id="Dni" name="Dni" required>
-            <span class="field-validation-error" data-valmsg-for="Dni" data-valmsg-replace="true"></span>
-            <span class="field-validation-error" data-valmsg-for="Dni" data-valmsg-replace="true"></span>
-
         </div>
 
         <div class="form-group">
             <label for="Nombre">Nombre *</label>
             <input type="text" id="Nombre" name="Nombre" required>
-            <span class="field-validation-error" data-valmsg-for="Nombre" data-valmsg-replace="true"></span>
         </div>
     </div>
 
@@ -40,13 +32,11 @@
         <div class="form-group">
             <label for="Apellido">Apellido *</label>
             <input type="text" id="Apellido" name="Apellido" required>
-            <span class="field-validation-error" data-valmsg-for="Apellido" data-valmsg-replace="true"></span>
         </div>
 
         <div class="form-group">
             <label for="Email">Email *</label>
             <input type="email" id="Email" name="Email" required>
-            <span class="field-validation-error" data-valmsg-for="Email" data-valmsg-replace="true"></span>
         </div>
     </div>
 
@@ -54,13 +44,11 @@
         <div class="form-group">
             <label for="Telefono">Teléfono *</label>
             <input type="text" id="Telefono" name="Telefono" required>
-            <span class="field-validation-error" data-valmsg-for="Telefono" data-valmsg-replace="true"></span>
         </div>
 
         <div class="form-group">
             <label for="TelefonoEmergencia">Teléfono de Emergencia</label>
             <input type="text" id="TelefonoEmergencia" name="TelefonoEmergencia">
-            <span class="field-validation-error" data-valmsg-for="TelefonoEmergencia" data-valmsg-replace="true" value="N/A"></span>
         </div>
     </div>
 
@@ -68,7 +56,6 @@
         <div class="form-group">
             <label for="Contrasenia">Contraseña *</label>
             <input type="password" id="Contrasenia" name="Contrasenia" required>
-            <span class="field-validation-error" data-valmsg-for="Contrasenia" data-valmsg-replace="true"></span>
         </div>
 
         <div class="form-group">
@@ -92,7 +79,10 @@
     </div>
 
 
-
-    <p class="errorLog" style="color:red;"></p>
-
+    @if (TempData["ErrorMessageCreateUser"] != null)
+     {
+        <div class="alert alert-danger">
+            <p style="color:red;">@TempData["ErrorMessageCreateUser"]</p>
+        </div>
+     }
 </form>

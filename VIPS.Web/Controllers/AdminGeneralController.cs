@@ -82,7 +82,6 @@ namespace VIPS.Web.Controllers
         [HttpGet]
         public IActionResult CreateUser()
         {
-            Console.WriteLine("create user");
             var roles = _userService.ObtenerRoles();
             ViewBag.Roles = roles;
 
@@ -98,6 +97,8 @@ namespace VIPS.Web.Controllers
                 if (!ModelState.IsValid)
                 {
                     ViewBag.Roles = _userService.ObtenerRoles();
+                    TempData["ErrorMessageCreateUser"] = "Ocurrio un error.";
+
                     return View(usuarioModel);
                 }
 
@@ -109,7 +110,8 @@ namespace VIPS.Web.Controllers
                     string.IsNullOrEmpty(usuarioModel.Telefono) ||
                     string.IsNullOrEmpty(usuarioModel.Contrasenia))
                 {
-                    ModelState.AddModelError("", "Todos los campos obligatorios deben ser completados");
+                    TempData["ErrorMessageCreateUser"] = "Todos los campos obligatorios deben ser completados";
+
                     ViewBag.Roles = _userService.ObtenerRoles();
                     return View(usuarioModel);
                 }
@@ -119,7 +121,8 @@ namespace VIPS.Web.Controllers
                 var usuarioExistente = _userService.VerificarUsuarioExistente(usuarioModel.Dni);
                 if (usuarioExistente)
                 {
-                    ModelState.AddModelError("Usuario", "Usuario invalido, ingrese devuelta.");
+                    TempData["ErrorMessageCreateUser"] = "Usuario invalido, ingrese devuelta..";
+
                     ViewBag.Roles = _userService.ObtenerRoles();
                     return View(usuarioModel);
                 }
@@ -128,7 +131,8 @@ namespace VIPS.Web.Controllers
                 var dniExistente = _userService.VerificarDniExistente(usuarioModel.Dni);
                 if (dniExistente)
                 {
-                    ModelState.AddModelError("Dni", "Dni invalido, ingrese devuelta");
+                    TempData["ErrorMessageCreateUser"] = "Dni invalido, ingrese devuelta.";
+
                     ViewBag.Roles = _userService.ObtenerRoles();
                     return View(usuarioModel);
                 }
@@ -137,7 +141,8 @@ namespace VIPS.Web.Controllers
                 var emailExistente = _userService.VerificarEmailExistente(usuarioModel.Email);
                 if (emailExistente)
                 {
-                    ModelState.AddModelError("Email", "Email invalido, ingrese devuelta");
+                    TempData["ErrorMessageCreateUser"] = "Email invalido, ingrese devuelta.";
+
                     ViewBag.Roles = _userService.ObtenerRoles();
                     return View(usuarioModel);
                 }
@@ -153,17 +158,21 @@ namespace VIPS.Web.Controllers
                 if (!resultado.Exito)
                 {
                     // Mostrar error en la misma vista
-                    ModelState.AddModelError("", resultado.Mensaje);
+                    TempData["ErrorMessageCreateUser"] = resultado.Mensaje;
+
                     ViewBag.Roles = _userService.ObtenerRoles();
                     return View(usuarioModel);
                 }
+
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(usuarioModel.Usuario, DateTime.Now, "Crear cuenta", "Se creo la cuenta con usuario: " + usuarioModel.Usuario, ipAddress);
 
                 TempData["MensajeExitoFormularioCrearUsuario"] = resultado.Mensaje;
                 return RedirectToAction("UserManagement");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", $"Error interno del servidor: {ex.Message}");
+                TempData["ErrorMessageCreateUser"] = $"Error interno del servidor: {ex.Message}";
                 return View(usuarioModel);
             }
         }
@@ -240,6 +249,23 @@ namespace VIPS.Web.Controllers
         [HttpGet("DeleteUser/{username}")]
         public async Task<IActionResult> DeleteUser(string username)
         {
+            var usuarioDb = _userService.retornarUsuarioModelEditConIdUsuario(_userService.RetornarIdUsuarioConUsuario(username));
+
+            if (usuarioDb == null)
+            {
+                TempData["ErrorMessageDeleteUser"] = "El usuario no existe.";
+
+                return RedirectToAction("UserManagement");
+            }
+
+
+            if (_userService.EsAdminGeneral(usuarioDb.IdRol))
+            {
+                TempData["ErrorMessageDeleteUser"] = "No se puede elmninar el admin general.";
+
+                return RedirectToAction("UserManagement");
+            }
+
             var resultado = _userService.EliminarUsuario(username);
 
 
@@ -249,12 +275,18 @@ namespace VIPS.Web.Controllers
                 TempData["ErrorDeleteMessage"] = $"Error al eliminar usuario: {resultado.Mensaje}";
             }
 
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion cuenta", nombreUsuario + " Elimino la cuenta con usuario: " + username, ipAddress);
+
             TempData["SuccessDeleteMessage"] = $"Usuario '{username}' eliminado correctamente";
             return RedirectToAction("UserManagement");
         }
 
         public async Task<IActionResult> ExportarUsuariosPdf(string columna = "fechaUltimoLogin", string orden = "desc")
         {
+            
+
             var usuarios = _userService.ObtenerUsuarios(columna, orden);
 
             using (var ms = new MemoryStream())
@@ -296,6 +328,11 @@ namespace VIPS.Web.Controllers
 
                 // Guardar PDF en memoria y devolver al navegador
                 document.Save(ms, false);
+
+                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar usuario", "Exportacion de tabla usuarios", ipAddress);
+
                 return File(ms.ToArray(), "application/pdf", "ReporteUsuarios.pdf");
             }
         }
@@ -345,6 +382,11 @@ namespace VIPS.Web.Controllers
 
                 // Guardar PDF en memoria y devolver al navegador
                 document.Save(ms, false);
+
+                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar logs", "Exportacion de tabla logs", ipAddress);
+
                 return File(ms.ToArray(), "application/pdf", "ReporteLogs.pdf");
             }
         }
@@ -352,7 +394,116 @@ namespace VIPS.Web.Controllers
 
         public IActionResult MyAccount()
         {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
             return View();
+        }
+
+
+        [HttpGet("EditUser/{username}")]
+        public IActionResult EditUser(string username)
+        { 
+            var roles = _userService.ObtenerRoles();
+            ViewBag.Roles = roles;
+
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            return View(_userService.retornarUsuarioModelEditConIdUsuario(_userService.RetornarIdUsuarioConUsuario(username)));
+        }
+
+
+        [HttpPost("EditUser/{username}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUser(string username,UsuarioModelEdit usuarioModel)
+        {
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Roles = _userService.ObtenerRoles();
+                var errores = ModelState.Values
+                            .SelectMany(v => v.Errors)
+                            .Select(e => e.ErrorMessage)
+                            .ToList();
+
+                TempData["ErrorMessageEditUser"] = string.Join("; ", errores);
+                //TempData["ErrorMessageEditUser"] = "Ocurrio un error.";
+
+                return View(usuarioModel);
+            }
+
+            // Validaciones básicas
+            if (string.IsNullOrEmpty(usuarioModel.Dni) ||
+                string.IsNullOrEmpty(usuarioModel.Nombre) ||
+                string.IsNullOrEmpty(usuarioModel.Apellido) ||
+                string.IsNullOrEmpty(usuarioModel.Email) ||
+                string.IsNullOrEmpty(usuarioModel.Telefono))
+            {
+                TempData["ErrorMessageEditUser"] = "Todos los campos obligatorios deben ser completados";
+
+                ViewBag.Roles = _userService.ObtenerRoles();
+                return View(usuarioModel);
+            }
+
+
+
+            var usuarioDb = _userService.retornarUsuarioModelEditConIdUsuario(usuarioModel.IdUsuario);
+
+            if (usuarioDb == null)
+            {
+                TempData["ErrorMessageEditUser"] = "El usuario no existe.";
+
+                ViewBag.Roles = _userService.ObtenerRoles();
+                return View(usuarioModel);
+            }
+
+
+            if (_userService.EsAdminGeneral(usuarioDb.IdRol))
+            {
+                usuarioModel.IdRol = usuarioDb.IdRol;
+            }
+
+
+            var conflicto = _userService.ExisteConflicto(usuarioModel);
+            if (conflicto.Dni) TempData["ErrorMessageEditUser"] = "El DNI ya está en uso por otro usuario.";
+            if (conflicto.Usuario) TempData["ErrorMessageEditUser"] =  "El nombre de usuario ya está en uso.";
+            if (conflicto.Email) TempData["ErrorMessageEditUser"] = "El correo ya está en uso.";
+            if (conflicto.Telefono) TempData["ErrorMessageEditUser"] = "El teléfono ya está en uso.";
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Roles = _userService.ObtenerRoles();
+
+                return View(usuarioModel);
+            }
+
+
+            ResultadoOperacion resultado = _userService.UpdateUser(usuarioModel);
+
+            if (!resultado.Exito)
+            {
+                TempData["ErrorMessageEditUser"] = resultado.Mensaje;
+                ViewBag.Roles = _userService.ObtenerRoles();
+                return View(usuarioModel);
+            }
+
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion cuenta", nombreUsuario + " Edito la cuenta con usuario: " + usuarioModel.Usuario, ipAddress);
+
+            TempData["MensajeExito"] = resultado.Mensaje;
+            return RedirectToAction("UserManagement");
         }
     }
 }
