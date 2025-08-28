@@ -1,10 +1,11 @@
 ﻿@{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="@lang">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -32,7 +33,9 @@
             </div>
 
             <div class="dropdownContent">
-                <a asp-controller="Auth" asp-action="Logout"><span>Cerrar sesion</span></a>
+                <a asp-controller="Auth" asp-action="Logout">
+                    <span>@(lang == "es" ? "Cerrar sesión" : "Logout")</span>
+                </a>
             </div>
 
         </div>
@@ -45,26 +48,41 @@
 
             <ul class="primary-navigation">
                 <li class="@(currentAction == "Index" ? "active" : "")">
-                    <a asp-controller="AdminGeneral" asp-action="Index"><h3>Inicio</h3></a>
+                    <a asp-controller="AdminGeneral" asp-action="Index">
+                        <h3>@(lang == "es" ? "Inicio" : "Home")</h3>
+                    </a>
                 </li>
                 <li class="@(currentAction == "UserManagement" ? "active" : "")">
-                    <a asp-controller="AdminGeneral" asp-action="UserManagement"><h3>Gestión de usuarios</h3></a>
+                    <a asp-controller="AdminGeneral" asp-action="UserManagement">
+                        <h3>@(lang == "es" ? "Gestión de usuarios" : "User Management")</h3>
+                    </a>
                 </li>
                 <li class="@(currentAction == "OrderManagement" ? "active" : "")">
-                    <a asp-controller="AdminGeneral" asp-action="OrderManagement"><h3>Gestión de pedidos</h3></a>
+                    <a asp-controller="AdminGeneral" asp-action="OrderManagement">
+                        <h3>@(lang == "es" ? "Gestión de pedidos" : "Order Management")</h3>
+                    </a>
                 </li>
                 <li class="@(currentAction == "FleetManagement" ? "active" : "")">
-                    <a asp-controller="AdminGeneral" asp-action="FleetManagement"><h3>Gestión de flota</h3></a>
+                    <a asp-controller="AdminGeneral" asp-action="FleetManagement">
+                        <h3>@(lang == "es" ? "Gestión de flota" : "Fleet Management")</h3>
+                    </a>
                 </li>
                 <li class="@(currentAction == "SystemLogs" ? "active" : "")">
-                    <a asp-controller="AdminGeneral" asp-action="SystemLogs"><h3>Logs del sistema</h3></a>
+                    <a asp-controller="AdminGeneral" asp-action="SystemLogs">
+                        <h3>@(lang == "es" ? "Logs del sistema" : "System Logs")</h3>
+                    </a>
                 </li>
                 <li class="@(currentAction == "UpdateAndRestore" ? "active" : "")">
-                    <a asp-controller="AdminGeneral" asp-action="UpdateAndRestore"><h3>Respaldos y restauraciones</h3></a>
+                    <a asp-controller="AdminGeneral" asp-action="UpdateAndRestore">
+                        <h3>@(lang == "es" ? "Respaldos y restauraciones" : "Backup & Restore")</h3>
+                    </a>
                 </li>
                 <li class="@(currentAction == "MyAccount" ? "active" : "")">
-                    <a asp-controller="AdminGeneral" asp-action="MyAccount"><h3>Mi cuenta</h3></a>
+                    <a asp-controller="AdminGeneral" asp-action="MyAccount">
+                        <h3>@(lang == "es" ? "Mi cuenta" : "My Account")</h3>
+                    </a>
                 </li>
+
             </ul>
 
             <div class="general-container">

@@ -2,66 +2,67 @@
 
 @{
     Layout = "_AdminLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
-<h2>Agregar Nuevo Usuario</h2>
+<h2>@(lang == "es" ? "Agregar Nuevo Usuario" : "Add New User")</h2>
 
-<form id="formAgregarUsuario" asp-controller="AdminGeneral" asp-action="CreateUser" method="post">
+<form id="formAgregarUsuario" asp-controller="AdminGeneral" asp-action="CreateUser" method="post" style="width:400px;">
     @Html.AntiForgeryToken()
 
     <div class="form-row">
         <div class="form-group">
-            <label for="Usuario">Usuario*</label>
-            <input type="text" id="Usuario" name="Usuario" required>
+            <label for="Usuario">@((lang == "es") ? "Usuario*" : "Username*")</label>
+            <input type="text" id="Usuario" name="Usuario" placeholder="@(lang == "es" ? "Ingrese el usuario" : "Enter username")" required>
         </div>
     </div>
 
     <div class="form-row">
         <div class="form-group">
-            <label for="Dni">DNI *</label>
-            <input type="text" id="Dni" name="Dni" required>
+            <label for="Dni">@((lang == "es") ? "DNI *" : "ID Number *")</label>
+            <input type="text" id="Dni" name="Dni" placeholder="@(lang == "es" ? "Ingrese DNI" : "Enter ID number")" required>
         </div>
 
         <div class="form-group">
-            <label for="Nombre">Nombre *</label>
-            <input type="text" id="Nombre" name="Nombre" required>
-        </div>
-    </div>
-
-    <div class="form-row">
-        <div class="form-group">
-            <label for="Apellido">Apellido *</label>
-            <input type="text" id="Apellido" name="Apellido" required>
-        </div>
-
-        <div class="form-group">
-            <label for="Email">Email *</label>
-            <input type="email" id="Email" name="Email" required>
+            <label for="Nombre">@((lang == "es") ? "Nombre *" : "First Name *")</label>
+            <input type="text" id="Nombre" name="Nombre" placeholder="@(lang == "es" ? "Ingrese nombre" : "Enter first name")" required>
         </div>
     </div>
 
     <div class="form-row">
         <div class="form-group">
-            <label for="Telefono">Teléfono *</label>
-            <input type="text" id="Telefono" name="Telefono" required>
+            <label for="Apellido">@((lang == "es") ? "Apellido *" : "Last Name *")</label>
+            <input type="text" id="Apellido" name="Apellido" placeholder="@(lang == "es" ? "Ingrese apellido" : "Enter last name")" required>
         </div>
 
         <div class="form-group">
-            <label for="TelefonoEmergencia">Teléfono de Emergencia</label>
-            <input type="text" id="TelefonoEmergencia" name="TelefonoEmergencia">
+            <label for="Email">@((lang == "es") ? "Email *" : "Email *")</label>
+            <input type="email" id="Email" name="Email" placeholder="@(lang == "es" ? "Ingrese email" : "Enter email")" required>
         </div>
     </div>
 
     <div class="form-row">
         <div class="form-group">
-            <label for="Contrasenia">Contraseña *</label>
-            <input type="password" id="Contrasenia" name="Contrasenia" required>
+            <label for="Telefono">@((lang == "es") ? "Teléfono *" : "Phone *")</label>
+            <input type="text" id="Telefono" name="Telefono" placeholder="@(lang == "es" ? "Ingrese teléfono" : "Enter phone")" required>
         </div>
 
         <div class="form-group">
-            <label for="IdRol">Rol *</label>
+            <label for="TelefonoEmergencia">@((lang == "es") ? "Teléfono de Emergencia" : "Emergency Phone")</label>
+            <input type="text" id="TelefonoEmergencia" name="TelefonoEmergencia" placeholder="@(lang == "es" ? "Ingrese teléfono de emergencia" : "Enter emergency phone")">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="Contrasenia">@((lang == "es") ? "Contraseña *" : "Password *")</label>
+            <input type="password" id="Contrasenia" name="Contrasenia" placeholder="@(lang == "es" ? "Ingrese contraseña" : "Enter password")" required>
+        </div>
+
+        <div class="form-group">
+            <label for="IdRol">@((lang == "es") ? "Rol *" : "Role *")</label>
             <select id="IdRol" name="IdRol" required>
-                <option value="">Seleccione un rol</option>
+                <option value="">@(lang == "es" ? "Seleccione un rol" : "Select a role")</option>
                 @foreach (var rol in ViewBag.Roles)
                 {
                 <option value="@rol.IdRol">@rol.Nombre</option>
@@ -71,18 +72,15 @@
         </div>
     </div>
 
-
-
     <div class="form-actions">
-        <button type="submit" class="btn-primary">Crear Usuario</button>
-        <a class="btn-secondary" asp-controller="AdminGeneral" asp-action="UserManagement">Volver</a>
+        <button type="submit" class="btn-principal">@(lang == "es" ? "Crear Usuario" : "Create User")</button>
+        <a class="btn-secondary" asp-controller="AdminGeneral" asp-action="UserManagement">@((lang == "es") ? "Volver" : "Back")</a>
     </div>
 
-
     @if (TempData["ErrorMessageCreateUser"] != null)
-     {
-        <div class="alert alert-danger">
-            <p style="color:red;">@TempData["ErrorMessageCreateUser"]</p>
-        </div>
-     }
+    {
+    <div class="alert alert-danger">
+        <p style="color:red;">@TempData["ErrorMessageCreateUser"]</p>
+    </div>
+    }
 </form>

@@ -226,62 +226,7 @@ namespace VIPS.Web.Services
             }
         }
 
-        /*public void ModificarUsuario(UsuarioModel usuario)
-        {
-            try
-            {
-                using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
-
-                conn.Open();
-
-                string query = @"UPDATE Usuario SET dni = @dni, nombre = @nombre, apellido = @apellido, email = @email, telefono = @telefono, telefonoEmergencia = @telefonoEmergencia, contraseniaHash = @contraseniaHash, IdRol = @idRol, usuario = @usuario";
-
-                using var cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@dni", usuario.Dni);
-                cmd.Parameters.AddWithValue("@nombre", usuario.Nombre);
-                cmd.Parameters.AddWithValue("@apellido", usuario.Apellido);
-                cmd.Parameters.AddWithValue("@email", usuario.Email);
-                cmd.Parameters.AddWithValue("@telefono", usuario.Telefono);
-
-                // Revisar si es null
-                cmd.Parameters.AddWithValue("@telefonoEmergencia",
-                    (object)usuario.TelefonoEmergencia ?? DBNull.Value);
-
-                cmd.Parameters.AddWithValue("@contraseniaHash", contraseniaHash);
-                cmd.Parameters.AddWithValue("@idRol", usuario.IdRol);
-                cmd.Parameters.AddWithValue("@usuario", usuario.Usuario);
-
-                using var cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@usuario", Usuario);
-
-                //devulve 1 si creo una fila
-                int filas = cmd.ExecuteNonQuery();
-
-                return new ResultadoOperacion
-                {
-                    Exito = filas > 0,
-                    Mensaje = filas > 0
-                ? "Usuario modificado correctamente"
-                : "No se modifico ningún registro"
-                };
-            }
-            catch (SqlException ex)
-            {
-                return new ResultadoOperacion
-                {
-                    Exito = false,
-                    Mensaje = $"Error en base de datos: {ex.Message}"
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ResultadoOperacion
-                {
-                    Exito = false,
-                    Mensaje = $"Error inesperado: {ex.Message}"
-                };
-            }
-        }*/
+     
 
         public bool VerificarDniExistente(string dni)
         {
@@ -580,6 +525,52 @@ namespace VIPS.Web.Services
             return resultado;
         }
 
+        public ResultadoOperacion ActualizarIdioma(string username, string idioma)
+        {
+            try
+            {
+                using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                conn.Open();
+
+                string query = @"UPDATE Usuario 
+                         SET idiomaInterfaz = @idioma 
+                         WHERE usuario = @username";
+
+                using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@idioma", idioma);
+                cmd.Parameters.AddWithValue("@username", username);
+
+                int filasAfectadas = cmd.ExecuteNonQuery();
+
+                if (filasAfectadas > 0)
+                {
+                    return new ResultadoOperacion
+                    {
+                        Exito = true,
+                        Mensaje = "Idioma actualizado correctamente"
+                    };
+                }
+                else
+                {
+                    return new ResultadoOperacion
+                    {
+                        Exito = false,
+                        Mensaje = "Usuario no encontrado"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ResultadoOperacion
+                {
+                    Exito = false,
+                    Mensaje = ex.Message
+                };
+            }
+        }
+
+
+      
 
 
     }

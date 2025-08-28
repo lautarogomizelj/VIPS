@@ -1,11 +1,13 @@
 ﻿@{
     Layout = "_AdminLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
 
-<h2>Bienvenido al sistema!</h2>
+<h2>@(lang == "es" ? "Bienvenido al sistema!" : "Welcome to the system!")</h2>
 
 
+<!--
 <table>
     <tr>
         <th>Fecha y hora</th>
@@ -48,4 +50,4 @@
         <td>--</td>
     </tr>
 
-</table>
+</table> -->

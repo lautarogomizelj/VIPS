@@ -1,74 +1,79 @@
 ﻿@model List<LogViewModel>
 
-
-@{
+    @{
     Layout = "_AdminLayout";
-}
-
-<div class="filtrosContenedor">
-
-    <form method="get" asp-controller="AdminGeneral" asp-action="SystemLogs">
-
-        <div class="contenedor-info">
-            <label for="columna"><h3>Columna:</h3></label>
-            <select id="columna" name="columna">
-                <option value="idLogActividad" selected="@(ViewBag.Columna == "idLogActividad" ? "selected" : null)">idLogActividad</option>
-                <option value="usuario" selected="@(ViewBag.Columna == "usuario" ? "selected" : null)">usuario</option>
-                <option value="FechaHora" selected="@(ViewBag.Columna == "FechaHora" ? "selected" : null)">Fecha hora</option>
-                <option value="Accion" selected="@(ViewBag.Columna == "Accion" ? "selected" : null)">Accion</option>
-                <option value="Detalle" selected="@(ViewBag.Columna == "Detalle" ? "selected" : null)">Detalle</option>
-
-            </select>
-
-            <label for="orden"><h3>Orden:</h3></label>
-            <select id="orden" name="orden">
-                <option value="asc" selected="@(ViewBag.Orden == "asc" ? "selected" : null)">Ascendente</option>
-                <option value="desc" selected="@(ViewBag.Orden == "desc" ? "selected" : null)">Descendente</option>
-            </select>
-
-            <label for="cantLogs"><h3>Cantidad de registros:</h3></label>
-            <select id="orden" name="cantLogs">
-                <option value="10" selected="@(ViewBag.CantLogs == 10 ? "selected" : null)">10</option>
-                <option value="20" selected="@(ViewBag.CantLogs == 20 ? "selected" : null)">20</option>
-                <option value="30" selected="@(ViewBag.CantLogs == 30 ? "selected" : null)">30</option>
-                <option value="40" selected="@(ViewBag.CantLogs == 40 ? "selected" : null)">40</option>
-            </select>
-        </div>
-
-    
-       <button type="submit">Aplicar filtros</button>
-
-    </form>
-
-
-    <a asp-controller="AdminGeneral" asp-action="ExportarLogsPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" asp-route-cantLogs="@ViewBag.CantLogs">
-        <h3>Exportar a pdf</h3>
-    </a>
-</div>
-
-
-<table>
-    <tr>
-        <th>idLogActividad</th>
-        <th>Usuario</th>
-        <th>FechaHora</th>
-        <th>Accion</th>
-        <th>Detalle</th>
-    </tr>
-
-
-    @foreach (var log in Model)
-    {
-    <tr>
-        <td>@log.idLogActividad</td>
-        <td>@log.Usuario</td>
-        <td>@log.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
-        <td>@log.Accion</td>
-        <td>@log.Detalle</td>
-    </tr>
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
     }
 
+    <div class="filtrosContenedor">
 
+        <form method="get" asp-controller="AdminGeneral" asp-action="SystemLogs">
 
+            <div class="contenedor-info">
+                <label for="columna"><h3>@(lang == "es" ? "Columna:" : "Column:")</h3></label>
+                <select id="columna" name="columna">
+                    <option value="idLogActividad" selected="@(ViewBag.Columna == "idLogActividad" ? "selected" : null)">
+                        @(lang == "es" ? "ID Log" : "Log ID")
+                    </option>
+                    <option value="usuario" selected="@(ViewBag.Columna == "usuario" ? "selected" : null)">
+                        @(lang == "es" ? "Usuario" : "User")
+                    </option>
+                    <option value="FechaHora" selected="@(ViewBag.Columna == "FechaHora" ? "selected" : null)">
+                        @(lang == "es" ? "Fecha y hora" : "Date & Time")
+                    </option>
+                    <option value="Accion" selected="@(ViewBag.Columna == "Accion" ? "selected" : null)">
+                        @(lang == "es" ? "Acción" : "Action")
+                    </option>
+                    <option value="Detalle" selected="@(ViewBag.Columna == "Detalle" ? "selected" : null)">
+                        @(lang == "es" ? "Detalle" : "Details")
+                    </option>
+                </select>
 
-</table>
+                <label for="orden"><h3>@(lang == "es" ? "Orden:" : "Order:")</h3></label>
+                <select id="orden" name="orden">
+                    <option value="asc" selected="@(ViewBag.Orden == "asc" ? "selected" : null)">
+                        @(lang == "es" ? "Ascendente" : "Ascending")
+                    </option>
+                    <option value="desc" selected="@(ViewBag.Orden == "desc" ? "selected" : null)">
+                        @(lang == "es" ? "Descendente" : "Descending")
+                    </option>
+                </select>
+
+                <label for="cantLogs"><h3>@(lang == "es" ? "Cantidad de registros:" : "Number of Records:")</h3></label>
+                <select id="cantLogs" name="cantLogs">
+                    <option value="10" selected="@(ViewBag.CantLogs == 10 ? "selected" : null)">10</option>
+                    <option value="20" selected="@(ViewBag.CantLogs == 20 ? "selected" : null)">20</option>
+                    <option value="30" selected="@(ViewBag.CantLogs == 30 ? "selected" : null)">30</option>
+                    <option value="40" selected="@(ViewBag.CantLogs == 40 ? "selected" : null)">40</option>
+                </select>
+            </div>
+
+            <button type="submit">@(lang == "es" ? "Aplicar filtros" : "Apply Filters")</button>
+
+        </form>
+
+        <a asp-controller="AdminGeneral" asp-action="ExportarLogsPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" asp-route-cantLogs="@ViewBag.CantLogs">
+            <h3>@(lang == "es" ? "Exportar a pdf" : "Export to PDF")</h3>
+        </a>
+    </div>
+
+    <table>
+        <tr>
+            <th>@(lang == "es" ? "ID Log" : "Log ID")</th>
+            <th>@(lang == "es" ? "Usuario" : "User")</th>
+            <th>@(lang == "es" ? "Fecha y hora" : "Date & Time")</th>
+            <th>@(lang == "es" ? "Acción" : "Action")</th>
+            <th>@(lang == "es" ? "Detalle" : "Details")</th>
+        </tr>
+
+        @foreach (var log in Model)
+    {
+        <tr>
+            <td>@log.idLogActividad</td>
+            <td>@log.Usuario</td>
+            <td>@log.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+            <td>@log.Accion</td>
+            <td>@log.Detalle</td>
+        </tr>
+    }
+    </table>

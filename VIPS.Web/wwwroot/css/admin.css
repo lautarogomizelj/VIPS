@@ -146,12 +146,12 @@ header {
             /* height: 40px; */
             top: 98px;
             width: max-content;
+            min-width: 100%;
             text-align: center;
             display: none;
             flex-direction: column;
             background: white;
             z-index:1000;
-            left:-23px;
         }
 
             header .contenedorUsuario .dropdownContent a {

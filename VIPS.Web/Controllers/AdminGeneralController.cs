@@ -23,7 +23,6 @@ namespace VIPS.Web.Controllers
         private readonly IHashService _hashService;
         private readonly LogService _logService;
         private readonly UserService _userService;
-        //private readonly PdfService _pdfService;
 
 
         public AdminGeneralController(IConfiguration configuration, IHashService hashService, LogService logService, UserService userService)
@@ -401,6 +400,7 @@ namespace VIPS.Web.Controllers
             // Pasar al layout
             ViewBag.NombreUsuario = nombreUsuario;
             ViewBag.RolUsuario = rolUsuario;
+            
 
             return View();
         }
@@ -437,8 +437,7 @@ namespace VIPS.Web.Controllers
                             .Select(e => e.ErrorMessage)
                             .ToList();
 
-                TempData["ErrorMessageEditUser"] = string.Join("; ", errores);
-                //TempData["ErrorMessageEditUser"] = "Ocurrio un error.";
+                TempData["ErrorMessageEditUser"] = "Ocurrio un error.";
 
                 return View(usuarioModel);
             }
@@ -505,5 +504,60 @@ namespace VIPS.Web.Controllers
             TempData["MensajeExito"] = resultado.Mensaje;
             return RedirectToAction("UserManagement");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> CambiarIdioma(string nuevoLang)
+        {
+            // Validación básica
+            if (string.IsNullOrEmpty(nuevoLang) || (nuevoLang != "es" && nuevoLang != "en"))
+            {
+                TempData["ErrorMessageChangeLanguage"] = "Ocurrió un error";
+                return RedirectToAction("MyAccount");
+            }
+
+            // Obtener el username del claim del usuario logueado
+            string username = User.FindFirstValue(ClaimTypes.Name);
+            if (string.IsNullOrEmpty(username))
+            {
+                TempData["ErrorMessageChangeLanguage"] = "Ocurrió un error";
+                return RedirectToAction("MyAccount");
+            }
+
+            // Actualizar idioma en la base de datos
+            ResultadoOperacion resultado = _userService.ActualizarIdioma(username, nuevoLang);
+
+            if (!resultado.Exito)
+            {
+                TempData["ErrorMessageChangeLanguage"] = resultado.Mensaje ?? "Ocurrió un error al actualizar el idioma";
+                return RedirectToAction("MyAccount");
+            }
+
+            // Actualizar cookie
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, User.FindFirstValue(ClaimTypes.Name)),
+                new Claim(ClaimTypes.Role, User.FindFirstValue(ClaimTypes.Role)),
+                new Claim("Lang", nuevoLang)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                new AuthenticationProperties { IsPersistent = true });
+
+            // Mensaje de éxito
+            TempData["SuccessMessageChangeLanguage"] = (nuevoLang == "es")
+                ? "Idioma cambiado a español"
+                : "Language changed to English";
+
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(username, DateTime.Now, "Cambio idioma", "Cambio de idioma a: " + nuevoLang, ipAddress);
+
+            return RedirectToAction("MyAccount");
+        }
+
     }
 }

@@ -69,7 +69,7 @@ namespace VIPS.Web.Controllers
 
 
                 string query = @"SELECT u.idUsuario, u.usuario, r.nombre as rol, u.contraseniaHash, 
-                                u.fechaUltimoIntentoFallido, u.intentosFallidosLogin 
+                                u.fechaUltimoIntentoFallido, u.intentosFallidosLogin, u.idiomaInterfaz
                                 FROM Usuario u 
                                 INNER JOIN Rol r ON r.idRol = u.idRol 
                                 WHERE u.usuario = @usuario";
@@ -86,6 +86,7 @@ namespace VIPS.Web.Controllers
                 {
                     string hashFromDb = reader["contraseniaHash"].ToString();
                     rol = reader["rol"].ToString();
+                    string idiomaInterfaz = reader["idiomaInterfaz"].ToString();
 
                     if (_hashService.VerifyPassword(password, hashFromDb))
                     {
@@ -101,6 +102,7 @@ namespace VIPS.Web.Controllers
                         {
                             new Claim(ClaimTypes.Name, username),
                             new Claim(ClaimTypes.Role, rol),
+                            new Claim("Lang", idiomaInterfaz),
                         };
 
                         var claimsIdentity = new ClaimsIdentity(
@@ -121,7 +123,6 @@ namespace VIPS.Web.Controllers
                         _logService.AgregarLog(username, DateTime.Now, "Login", "Inicio de sesión exitoso", ipAddress);
 
 
-
                         // Redirigir según rol
                         return rol switch
                         {
@@ -132,7 +133,6 @@ namespace VIPS.Web.Controllers
                         };
                     }
                 }
-
 
                 // Login fallido
                 await ActualizarUsuarioLoginFallido(username);
@@ -325,8 +325,12 @@ namespace VIPS.Web.Controllers
 
         public async Task<IActionResult> Logout()
         {
-            /*string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
-            _logService.AgregarLog(_userService.RetornarUsuarioConEmail(correo), DateTime.Now, "Logout", "Logout del sistema exitoso", ipAddress);*/
+
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Logout", "Logout exitoso", ipAddress);
+
+            Response.Cookies.Delete("Lang");
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
