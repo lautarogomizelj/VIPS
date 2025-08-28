@@ -1,5 +1,9 @@
 @{
-    Layout = "";
+    Layout = "_AdminVentasLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
-<h1>Hola estas en el index de Admin Ventas</h1>
+
+<h2>@(lang == "es" ? "Bienvenido al sistema!" : "Welcome to the system!")</h2>
+
+

@@ -7,10 +7,10 @@
 
     <div class="filtrosContenedor">
 
-        <form method="get" asp-controller="AdminGeneral" asp-action="SystemLogs">
+        <form method="get" asp-controller="AdminGeneral" asp-action="SystemLogs" class="FILTER" style="width:500px;">
 
             <div class="contenedor-info">
-                <label for="columna"><h3>@(lang == "es" ? "Columna:" : "Column:")</h3></label>
+                <label for="columna"><h4>@(lang == "es" ? "Columna:" : "Column:")</h4></label>
                 <select id="columna" name="columna">
                     <option value="idLogActividad" selected="@(ViewBag.Columna == "idLogActividad" ? "selected" : null)">
                         @(lang == "es" ? "ID Log" : "Log ID")
@@ -29,7 +29,7 @@
                     </option>
                 </select>
 
-                <label for="orden"><h3>@(lang == "es" ? "Orden:" : "Order:")</h3></label>
+                <label for="orden"><h4>@(lang == "es" ? "Orden:" : "Order:")</h4></label>
                 <select id="orden" name="orden">
                     <option value="asc" selected="@(ViewBag.Orden == "asc" ? "selected" : null)">
                         @(lang == "es" ? "Ascendente" : "Ascending")
@@ -38,8 +38,11 @@
                         @(lang == "es" ? "Descendente" : "Descending")
                     </option>
                 </select>
+            </div>
 
-                <label for="cantLogs"><h3>@(lang == "es" ? "Cantidad de registros:" : "Number of Records:")</h3></label>
+            <div class="contenedor-info">
+
+                <label for="cantLogs"><h4>@(lang == "es" ? "Cantidad de registros:" : "Number of Records:")</h4></label>
                 <select id="cantLogs" name="cantLogs">
                     <option value="10" selected="@(ViewBag.CantLogs == 10 ? "selected" : null)">10</option>
                     <option value="20" selected="@(ViewBag.CantLogs == 20 ? "selected" : null)">20</option>
@@ -47,13 +50,12 @@
                     <option value="40" selected="@(ViewBag.CantLogs == 40 ? "selected" : null)">40</option>
                 </select>
             </div>
-
-            <button type="submit">@(lang == "es" ? "Aplicar filtros" : "Apply Filters")</button>
+                <button class="btn-principal filtros" type="submit">@(lang == "es" ? "Aplicar filtros" : "Apply Filters")</button>
 
         </form>
 
-        <a asp-controller="AdminGeneral" asp-action="ExportarLogsPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" asp-route-cantLogs="@ViewBag.CantLogs">
-            <h3>@(lang == "es" ? "Exportar a pdf" : "Export to PDF")</h3>
+        <a class="btn-principal filtros" asp-controller="AdminGeneral" asp-action="ExportarLogsPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" asp-route-cantLogs="@ViewBag.CantLogs">
+            @(lang == "es" ? "Exportar a pdf" : "Export to PDF")
         </a>
     </div>
 

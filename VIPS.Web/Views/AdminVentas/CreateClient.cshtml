@@ -1,13 +1,11 @@
-@model VIPS.Web.Models.UsuarioModel
-
 @{
-    Layout = "_AdminLayout";
+    Layout = "_AdminVentasLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
 
-<form id="formAgregarUsuario" asp-controller="AdminGeneral" asp-action="CreateUser" method="post" class="CRUD">
-    <h3>@(lang == "es" ? "Agregar Nuevo Usuario" : "Add New User")</h3>
+<form asp-controller="AdminVentas" asp-action="CreateClient" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Agregar Nuevo Cliente" : "Add New Client")</h3>
     @Html.AntiForgeryToken()
 
     <div class="row">
@@ -29,7 +27,6 @@
         <label for="Apellido">@((lang == "es") ? "Apellido *" : "Last Name *")</label>
         <input type="text" id="Apellido" name="Apellido" placeholder="@(lang == "es" ? "Ingrese apellido" : "Enter last name")" required>
     </div>
-
     <div class="row">
         <label for="Email">@((lang == "es") ? "Email *" : "Email *")</label>
         <input type="email" id="Email" name="Email" placeholder="@(lang == "es" ? "Ingrese email" : "Enter email")" required>
@@ -45,30 +42,16 @@
         <input type="text" id="TelefonoEmergencia" name="TelefonoEmergencia" placeholder="@(lang == "es" ? "Ingrese teléfono de emergencia" : "Enter emergency phone")">
     </div>
 
-    <div class="row">
-        <label for="Contrasenia">@((lang == "es") ? "Contraseña *" : "Password *")</label>
-        <input type="password" id="Contrasenia" name="Contrasenia" placeholder="@(lang == "es" ? "Ingrese contraseña" : "Enter password")" required>
-    </div>
 
-    <div class="row">
-        <label for="IdRol">@((lang == "es") ? "Rol *" : "Role *")</label>
-        <select id="IdRol" name="IdRol" required>
-            <option value="">@(lang == "es" ? "Seleccione un rol" : "Select a role")</option>
-            @foreach (var rol in ViewBag.Roles)
-                {
-            <option value="@rol.IdRol">@rol.Nombre</option>
-                }
-        </select>
-        <span class="field-validation-error" data-valmsg-for="IdRol" data-valmsg-replace="true"></span>
-    </div>
+    <button type="submit" class="btn-principal">@(lang == "es" ? "Crear Cliente" : "Create Client")</button>
+    <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
-    <button type="submit" class="btn-principal">@(lang == "es" ? "Crear Usuario" : "Create User")</button>
-    <a class="restablecer" asp-controller="AdminGeneral" asp-action="UserManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
     @if (TempData["ErrorMessageCreateUser"] != null)
     {
     <div class="alert alert-danger">
-        <p style="color:red;">@TempData["ErrorMessageCreateUser"]</p>
+        <p class="error">@TempData["ErrorMessageCreateUser"]</p>
     </div>
     }
 </form>
+

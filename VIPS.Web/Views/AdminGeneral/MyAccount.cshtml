@@ -5,29 +5,35 @@
 
 <h2>@(lang == "es" ? "Administrar mi cuenta" : "Manage My Account")</h2>
 
-<a class="btn-principal" asp-controller="Auth" asp-action="ChangePasswordAccount">
-    @(lang == "es" ? "Cambiar Contraseña" : "Change Password")
-</a>
 
-@if (TempData["ErrorMessageChange"] != null)
-{
-<div class="alert alert-danger">
-    <p style="color:red;">@TempData["ErrorMessageChange"]</p>
-</div>
-}
 
-@if (TempData["SuccessMessageChange"] != null)
-{
-<div class="alert alert-danger">
-    <p style="color:green;">@TempData["SuccessMessageChange"]</p>
-</div>
-}
+<form class="CRUD"  style="width: 350px;">
+    <a class="btn-principal" asp-controller="Auth" asp-action="ChangePasswordAccount">
+        @(lang == "es" ? "Cambiar Contraseña" : "Change Password")
+    </a>
 
-<form asp-controller="AdminGeneral" asp-action="CambiarIdioma" method="post" style="width: 230px; margin-top: 61px;">
+    @if (TempData["ErrorMessageChange"] != null)
+    {
+        <div class="alert alert-danger">
+            <p style="color:red;">@TempData["ErrorMessageChange"]</p>
+        </div>
+    }
+
+        @if (TempData["SuccessMessageChange"] != null)
+    {
+        <div class="alert alert-danger">
+            <p style="color:green;">@TempData["SuccessMessageChange"]</p>
+        </div>
+    }
+</form>
+
+
+
+<form asp-controller="AdminGeneral" asp-action="CambiarIdioma" method="post" class="CRUD" style="width: 350px;">
     @Html.AntiForgeryToken()
+    <h3>@((lang == "es") ? "Seleccionar idioma interfaz" : "Select Interface Language")</h3>
 
-    <div class="form-group">
-        <label for="nuevoLang">@((lang == "es") ? "Seleccionar idioma interfaz" : "Select Interface Language")</label>
+    <div class="row">
         <select id="nuevoLang" name="nuevoLang" required>
             @if(lang == "es")
         {

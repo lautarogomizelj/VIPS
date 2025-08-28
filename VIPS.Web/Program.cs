@@ -34,6 +34,8 @@ builder.Services.AddScoped<DatabaseService>();
 builder.Services.AddScoped<IHashService, HashService>();
 builder.Services.AddScoped<LogService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ClientService>();
+
 
 
 builder.Services.AddSingleton(new EmailService(

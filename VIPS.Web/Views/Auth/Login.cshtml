@@ -9,22 +9,18 @@
 <section>
     <form method="post" asp-controller="Auth" asp-action="Login">
         <h3>Ingresar a cuenta</h3>
-        <div class="row-two">
-            <div class="grupo">
-                <label for="username">
-                    <span>Usuario</span>
-                </label>
-                <input type="text" name="username" maxlength="100" required>
-            </div>
+        <div class="row">
+            <label for="username">
+                <span>Usuario</span>
+            </label>
+            <input type="text" name="username" maxlength="100" required>
         </div>
 
-        <div class="row-two">
-            <div class="grupo">
-                <label for="password">
-                    <span>Contraseña</span>
-                </label>
-                <input type="password" name="password" maxlength="100" required>
-            </div>
+        <div class="row">
+            <label for="password">
+                <span>Contraseña</span>
+            </label>
+            <input type="password" name="password" maxlength="100" required>
         </div>
 
         <a asp-controller="Auth" asp-action="RestorePassword" class="restablecer">¿Olvidaste tu contraseña?</a>
@@ -35,7 +31,7 @@
         @if (!string.IsNullOrEmpty(errorMessage))
         {
         <div>
-            <p class="error" style="color:red">
+            <p class="error">
                 @errorMessage
             </p>
         </div>
