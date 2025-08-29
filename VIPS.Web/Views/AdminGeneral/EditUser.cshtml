@@ -6,8 +6,22 @@
 }
 
 <form asp-action="EditUser" asp-controller="AdminGeneral" method="post" class="CRUD">
-    <h3>@(lang == "es" ? "Editar cliente" : "Edit client")</h3>
+    <h3>@(lang == "es" ? "Editar usuario" : "Edit user")</h3>
     @Html.AntiForgeryToken()
+
+    @if (TempData["ErrorMessageEditUser"] != null)
+   {
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageEditUser"]</p>
+    </div>
+   }
+
+    @if (TempData["MensajeExito"] != null)
+    {
+        <div class="alert alert-danger">
+            <p class="exito">@TempData["MensajeExito"]</p>
+        </div>
+    }
 
     <div class="row">
         <label for="Usuario">@((lang == "es") ? "Usuario" : "Username")</label>
@@ -71,12 +85,5 @@
 
     <button type="submit" class="btn-principal">@((lang == "es") ? "Confirmar cambios" : "Confirm Changes")</button>
     <a class="restablecer" asp-controller="AdminGeneral" asp-action="UserManagement">@((lang == "es") ? "Volver" : "Back")</a>
-
-    @if (TempData["ErrorMessageEditUser"] != null)
-    {
-    <div class="alert alert-danger">
-        <p style="color:red;">@TempData["ErrorMessageEditUser"]</p>
-    </div>
-    }
 
 </form>

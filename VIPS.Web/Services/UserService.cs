@@ -110,7 +110,7 @@ namespace VIPS.Web.Services
                 // Orden seguro
                 var ordenSeguro = (orden?.ToUpper() == "DESC") ? "DESC" : "ASC";
 
-                var query = $@"select u.usuario, r.nombre, u.fechaCreacion, u.fechaUltimoLogin, u.fechaUltimoIntentoFallido from Usuario u inner join Rol r on r.idRol = u.idRol order by {columna} {ordenSeguro}";
+                var query = $@"select u.usuario, r.nombre, u.fechaCreacion, u.fechaUltimoLogin, u.fechaUltimoIntentoFallido from Usuario u inner join Rol r on r.idRol = u.idRol WHERE eliminado = 0 order by {columna} {ordenSeguro}";
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 connection.Open();
@@ -192,7 +192,7 @@ namespace VIPS.Web.Services
 
                 conn.Open();
 
-                string query = @"DELETE FROM Usuario WHERE usuario = @usuario";
+                string query = @"UPDATE Usuario SET eliminado = 1 WHERE usuario = @usuario";
 
                 using var cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@usuario", Usuario);
@@ -230,7 +230,7 @@ namespace VIPS.Web.Services
 
         public bool VerificarDniExistente(string dni)
         {
-            var query = "SELECT COUNT(1) FROM Usuario WHERE dni = @dni";
+            var query = "SELECT COUNT(1) FROM Usuario WHERE dni = @dni and eliminado = 0";
             using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             connection.OpenAsync();
 
@@ -257,7 +257,7 @@ namespace VIPS.Web.Services
 
         public bool VerificarEmailExistente(string email)
         {
-            var query = "SELECT COUNT(1) FROM Usuario WHERE email = @email";
+            var query = "SELECT COUNT(1) FROM Usuario WHERE email = @email and eliminado = 0";
             using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             connection.Open();
 
@@ -270,7 +270,7 @@ namespace VIPS.Web.Services
 
         public bool VerificarUsuarioExistente(string usuario)
         {
-            var query = "SELECT COUNT(1) FROM Usuario WHERE usuario = @usuario";
+            var query = "SELECT COUNT(1) FROM Usuario WHERE usuario = @usuario and eliminado = 0";
             using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             connection.Open();
 
@@ -284,7 +284,7 @@ namespace VIPS.Web.Services
 
         public int RetornarIdUsuarioConEmail(string email)
         {
-            string query = @"SELECT idUsuario FROM Usuario WHERE email = @correo";
+            string query = @"SELECT idUsuario FROM Usuario WHERE email = @correo and eliminado = 0";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
@@ -303,7 +303,7 @@ namespace VIPS.Web.Services
 
         public int RetornarIdUsuarioConUsuario(string usuario)
         {
-            string query = @"SELECT idUsuario FROM Usuario WHERE usuario = @usuario";
+            string query = @"SELECT idUsuario FROM Usuario WHERE usuario = @usuario and eliminado = 0";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
@@ -322,7 +322,7 @@ namespace VIPS.Web.Services
 
         public int RetornarIdUsuarioConToken(string token)
         {
-            string query = @"SELECT u.idUsuario FROM Usuario u inner join RecuperacionContrasenia r on r.idUsuario = u.idUsuario WHERE token = @token";
+            string query = @"SELECT u.idUsuario FROM Usuario u inner join RecuperacionContrasenia r on r.idUsuario = u.idUsuario WHERE token = @token and eliminado = 0";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
@@ -341,7 +341,7 @@ namespace VIPS.Web.Services
 
         public string? RetornarUsuarioConToken(string token)
         {
-            string query = @"SELECT usuario FROM Usuario u inner join RecuperacionContrasenia r on r.idUsuario = u.idUsuario WHERE token = @token";
+            string query = @"SELECT usuario FROM Usuario u inner join RecuperacionContrasenia r on r.idUsuario = u.idUsuario WHERE token = @token and eliminado = 0";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
@@ -355,7 +355,7 @@ namespace VIPS.Web.Services
 
         public string? RetornarUsuarioConEmail(string email)
         {
-            string query = @"SELECT usuario FROM Usuario WHERE email = @email";
+            string query = @"SELECT usuario FROM Usuario WHERE email = @email and eliminado = 0";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
@@ -422,7 +422,7 @@ namespace VIPS.Web.Services
 
         public string? retornarContraseniaHashConUsuario(string username)
         {
-             string query = @"SELECT contraseniaHash FROM Usuario WHERE usuario = @username";
+             string query = @"SELECT contraseniaHash FROM Usuario WHERE usuario = @username and eliminado = 0";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
@@ -447,7 +447,7 @@ namespace VIPS.Web.Services
             ISNULL(MAX(CASE WHEN telefono = @telefono THEN 1 ELSE 0 END), 0) AS ConflictoTelefono
         FROM Usuario
         WHERE idUsuario <> @idUsuario
-          AND (dni = @dni OR usuario = @usuario OR email = @correo OR telefono = @telefono);";
+          AND (dni = @dni OR usuario = @usuario OR email = @correo OR telefono = @telefono and eliminado = 0);";
 
             using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             connection.Open();
@@ -490,7 +490,7 @@ namespace VIPS.Web.Services
                 IdRol = @idRol,
                 nombre = @nombre,
                 apellido = @apellido
-            WHERE idUsuario = @idUsuario";
+            WHERE idUsuario = @idUsuario and eliminado = 0";
 
                 using var command = new SqlCommand(query, connection);
 
@@ -534,7 +534,7 @@ namespace VIPS.Web.Services
 
                 string query = @"UPDATE Usuario 
                          SET idiomaInterfaz = @idioma 
-                         WHERE usuario = @username";
+                         WHERE usuario = @username and eliminado = 0";
 
                 using var cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@idioma", idioma);

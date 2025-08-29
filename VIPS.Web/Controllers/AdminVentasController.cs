@@ -98,5 +98,78 @@ namespace VIPS.Web.Controllers
             return View();
         }
 
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateClient(ClienteModel clienteModel) 
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessageCreateClient"] = "Ocurrio un error.";
+
+                    return View(clienteModel);
+                }
+
+                // Validaciones básicas
+                if (string.IsNullOrEmpty(clienteModel.Nombre) ||
+                    string.IsNullOrEmpty(clienteModel.Apellido) ||
+                    string.IsNullOrEmpty(clienteModel.Email) ||
+                    string.IsNullOrEmpty(clienteModel.Telefono) ||
+                    string.IsNullOrEmpty(clienteModel.DomicilioLegal) ||
+                    string.IsNullOrEmpty(clienteModel.Dni))
+                {
+                    TempData["ErrorMessageCreateClient"] = "Todos los campos obligatorios deben ser completados";
+
+                    return View(clienteModel);
+                }
+
+                // Verificar si el DNI ya existe
+
+                var dniExistente = _clientService.VerificarDniExistente(clienteModel.Dni);
+                if (dniExistente)
+                {
+                    TempData["ErrorMessageCreateClient"] = "Dni invalido, ingrese devuelta..";
+
+                    return View(clienteModel);
+                }
+
+
+                // Verificar si el email ya existe
+                
+                var emailExistente = _clientService.VerificarEmailExistente(clienteModel.Email);
+                if (emailExistente)
+                {
+                    TempData["ErrorMessageCreateClient"] = "Email invalido, ingrese devuelta.";
+
+                    return View(clienteModel);
+                }
+
+
+                var resultado = _clientService.CrearCliente(clienteModel);
+
+
+                if (!resultado.Exito)
+                {
+                    // Mostrar error en la misma vista
+                    TempData["ErrorMessageCreateClient"] = resultado.Mensaje;
+
+                    return View(clienteModel);
+                }
+
+                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Crear cliente", "Se creo cliente con nombre: " + clienteModel.Nombre, ipAddress);
+
+                TempData["MensajeExitoFormularioCrearCliente"] = resultado.Mensaje;
+                return RedirectToAction("CreateClient");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessageCreateClient"] = $"Error interno del servidor: {ex.Message}";
+                return View(clienteModel);
+            }
+        }
     }
 }

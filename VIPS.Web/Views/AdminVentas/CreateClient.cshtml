@@ -1,3 +1,5 @@
+@model ClienteModel
+
 @{
     Layout = "_AdminVentasLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
@@ -9,37 +11,33 @@
     @Html.AntiForgeryToken()
 
     <div class="row">
-        <label for="Usuario">@((lang == "es") ? "Usuario*" : "Username*")</label>
-        <input type="text" id="Usuario" name="Usuario" placeholder="@(lang == "es" ? "Ingrese el usuario" : "Enter username")" required>
-    </div>
-
-    <div class="row">
-        <label for="Dni">@((lang == "es") ? "DNI *" : "ID Number *")</label>
-        <input type="text" id="Dni" name="Dni" placeholder="@(lang == "es" ? "Ingrese DNI" : "Enter ID number")" required>
+        <label for="Dni">@((lang == "es") ? "Dni*" : "Dni *")</label>
+        <input type="text" id="Dni" name="Dni" required>
     </div>
 
     <div class="row">
         <label for="Nombre">@((lang == "es") ? "Nombre *" : "First Name *")</label>
-        <input type="text" id="Nombre" name="Nombre" placeholder="@(lang == "es" ? "Ingrese nombre" : "Enter first name")" required>
+        <input type="text" id="Nombre" name="Nombre" required>
     </div>
 
     <div class="row">
         <label for="Apellido">@((lang == "es") ? "Apellido *" : "Last Name *")</label>
-        <input type="text" id="Apellido" name="Apellido" placeholder="@(lang == "es" ? "Ingrese apellido" : "Enter last name")" required>
+        <input type="text" id="Apellido" name="Apellido" required>
     </div>
+
     <div class="row">
         <label for="Email">@((lang == "es") ? "Email *" : "Email *")</label>
-        <input type="email" id="Email" name="Email" placeholder="@(lang == "es" ? "Ingrese email" : "Enter email")" required>
+        <input type="email" id="Email" name="Email" required>
     </div>
 
     <div class="row">
         <label for="Telefono">@((lang == "es") ? "Teléfono *" : "Phone *")</label>
-        <input type="text" id="Telefono" name="Telefono" placeholder="@(lang == "es" ? "Ingrese teléfono" : "Enter phone")" required>
+        <input type="text" id="Telefono" name="Telefono" required>
     </div>
 
     <div class="row">
-        <label for="TelefonoEmergencia">@((lang == "es") ? "Teléfono de Emergencia" : "Emergency Phone")</label>
-        <input type="text" id="TelefonoEmergencia" name="TelefonoEmergencia" placeholder="@(lang == "es" ? "Ingrese teléfono de emergencia" : "Enter emergency phone")">
+        <label for="DomicilioLegal">@((lang == "es") ? "Domicilio Legal *" : "Legal Address *")</label>
+        <input type="text" id="DomicilioLegal" name="DomicilioLegal" required>
     </div>
 
 
@@ -47,11 +45,19 @@
     <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
 
-    @if (TempData["ErrorMessageCreateUser"] != null)
+    @if (TempData["ErrorMessageCreateClient"] != null)
     {
     <div class="alert alert-danger">
-        <p class="error">@TempData["ErrorMessageCreateUser"]</p>
+        <p class="error">@TempData["ErrorMessageCreateClient"]</p>
     </div>
     }
+
+    @if (TempData["MensajeExitoFormularioCrearCliente"] != null)
+{
+    <div class="alert alert-danger">
+        <p class="exito">@TempData["MensajeExitoFormularioCrearCliente"]</p>
+    </div>
+}
+
 </form>
 

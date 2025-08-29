@@ -167,7 +167,7 @@ namespace VIPS.Web.Controllers
                 _logService.AgregarLog(usuarioModel.Usuario, DateTime.Now, "Crear cuenta", "Se creo la cuenta con usuario: " + usuarioModel.Usuario, ipAddress);
 
                 TempData["MensajeExitoFormularioCrearUsuario"] = resultado.Mensaje;
-                return RedirectToAction("UserManagement");
+                return RedirectToAction("CreateUser");
             }
             catch (Exception ex)
             {
@@ -248,21 +248,45 @@ namespace VIPS.Web.Controllers
         [HttpGet("DeleteUser/{username}")]
         public async Task<IActionResult> DeleteUser(string username)
         {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            ViewBag.Usuario = username;
+
+            return View();
+        }
+
+        [HttpPost("DeleteUser/{username}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUser(string eleccion, string username)
+        {
+            if (eleccion == "no")
+            {
+                TempData["ErrorMessageDeleteUser"] = "Ocurrio un error.";
+                ViewBag.Usuario = username;
+                return RedirectToAction("DeleteUser");
+            }
+
             var usuarioDb = _userService.retornarUsuarioModelEditConIdUsuario(_userService.RetornarIdUsuarioConUsuario(username));
 
             if (usuarioDb == null)
             {
                 TempData["ErrorMessageDeleteUser"] = "El usuario no existe.";
-
-                return RedirectToAction("UserManagement");
+                ViewBag.Usuario = username;
+                return RedirectToAction("DeleteUser");
             }
 
 
             if (_userService.EsAdminGeneral(usuarioDb.IdRol))
             {
                 TempData["ErrorMessageDeleteUser"] = "No se puede elmninar el admin general.";
-
-                return RedirectToAction("UserManagement");
+                ViewBag.Usuario = username;
+                return RedirectToAction("DeleteUser");
             }
 
             var resultado = _userService.EliminarUsuario(username);
@@ -271,7 +295,8 @@ namespace VIPS.Web.Controllers
             if (!resultado.Exito)
             {
                 // Mostrar error en la misma vista
-                TempData["ErrorDeleteMessage"] = $"Error al eliminar usuario: {resultado.Mensaje}";
+                ViewBag.Usuario = username;
+                TempData["ErrorMessageDeleteUser"] = $"Error al eliminar usuario: {resultado.Mensaje}";
             }
 
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
@@ -279,7 +304,7 @@ namespace VIPS.Web.Controllers
             _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion cuenta", nombreUsuario + " Elimino la cuenta con usuario: " + username, ipAddress);
 
             TempData["SuccessDeleteMessage"] = $"Usuario '{username}' eliminado correctamente";
-            return RedirectToAction("UserManagement");
+            return View();
         }
 
         public async Task<IActionResult> ExportarUsuariosPdf(string columna = "fechaUltimoLogin", string orden = "desc")
@@ -502,7 +527,8 @@ namespace VIPS.Web.Controllers
             _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion cuenta", nombreUsuario + " Edito la cuenta con usuario: " + usuarioModel.Usuario, ipAddress);
 
             TempData["MensajeExito"] = resultado.Mensaje;
-            return RedirectToAction("UserManagement");
+            ViewBag.Roles = _userService.ObtenerRoles();
+            return View(usuarioModel);
         }
 
         [HttpPost]

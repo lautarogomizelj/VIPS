@@ -10,6 +10,20 @@
     <h3>@(lang == "es" ? "Agregar Nuevo Usuario" : "Add New User")</h3>
     @Html.AntiForgeryToken()
 
+    @if (TempData["ErrorMessageCreateUser"] != null)
+    {
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageCreateUser"]</p>
+    </div>
+    }
+
+    @if (TempData["MensajeExitoFormularioCrearUsuario"] != null)
+{
+    <div class="alert alert-danger">
+        <p class="exito">@TempData["MensajeExitoFormularioCrearUsuario"]</p>
+    </div>
+}
+
     <div class="row">
         <label for="Usuario">@((lang == "es") ? "Usuario*" : "Username*")</label>
         <input type="text" id="Usuario" name="Usuario" placeholder="@(lang == "es" ? "Ingrese el usuario" : "Enter username")" required>
@@ -65,10 +79,5 @@
     <button type="submit" class="btn-principal">@(lang == "es" ? "Crear Usuario" : "Create User")</button>
     <a class="restablecer" asp-controller="AdminGeneral" asp-action="UserManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
-    @if (TempData["ErrorMessageCreateUser"] != null)
-    {
-    <div class="alert alert-danger">
-        <p style="color:red;">@TempData["ErrorMessageCreateUser"]</p>
-    </div>
-    }
+
 </form>

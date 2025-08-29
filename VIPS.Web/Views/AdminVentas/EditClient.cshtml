@@ -1,0 +1,47 @@
+@{
+    Layout = "_AdminVentasLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+<form asp-controller="AdminVentas" asp-action="EditClient" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Editar Cliente" : "Edit Client")</h3>
+    @Html.AntiForgeryToken()
+
+    <!-- Campo oculto para el ID del cliente -->
+    <input type="hidden" id="IdCliente" name="IdCliente" value="@Model.IdCliente" />
+
+    <div class="row">
+        <label for="Nombre">@((lang == "es") ? "Nombre *" : "First Name *")</label>
+        <input type="text" id="Nombre" name="Nombre" value="@Model.Nombre" required>
+    </div>
+
+    <div class="row">
+        <label for="Apellido">@((lang == "es") ? "Apellido *" : "Last Name *")</label>
+        <input type="text" id="Apellido" name="Apellido" value="@Model.Apellido" required>
+    </div>
+
+    <div class="row">
+        <label for="Email">@((lang == "es") ? "Email *" : "Email *")</label>
+        <input type="email" id="Email" name="Email" value="@Model.Email" required>
+    </div>
+
+    <div class="row">
+        <label for="Telefono">@((lang == "es") ? "Teléfono *" : "Phone *")</label>
+        <input type="text" id="Telefono" name="Telefono" value="@Model.Telefono" required>
+    </div>
+
+    <div class="row">
+        <label for="DomicilioLegal">@((lang == "es") ? "Domicilio Legal *" : "Legal Address *")</label>
+        <input type="text" id="DomicilioLegal" name="DomicilioLegal" value="@Model.DomicilioLegal" required>
+    </div>
+
+    <button type="submit" class="btn-principal">@(lang == "es" ? "Guardar Cambios" : "Save Changes")</button>
+    <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Cancelar" : "Cancel")</a>
+
+    @if (TempData["ErrorMessageEditUser"] != null)
+    {
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageEditUser"]</p>
+    </div>
+    }
+</form>
