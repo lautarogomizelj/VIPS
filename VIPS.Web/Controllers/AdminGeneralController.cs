@@ -81,6 +81,13 @@ namespace VIPS.Web.Controllers
         [HttpGet]
         public IActionResult CreateUser()
         {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
             var roles = _userService.ObtenerRoles();
             ViewBag.Roles = roles;
 
@@ -498,12 +505,20 @@ namespace VIPS.Web.Controllers
                 usuarioModel.IdRol = usuarioDb.IdRol;
             }
 
-
             var conflicto = _userService.ExisteConflicto(usuarioModel);
-            if (conflicto.Dni) TempData["ErrorMessageEditUser"] = "El DNI ya está en uso por otro usuario.";
-            if (conflicto.Usuario) TempData["ErrorMessageEditUser"] =  "El nombre de usuario ya está en uso.";
-            if (conflicto.Email) TempData["ErrorMessageEditUser"] = "El correo ya está en uso.";
-            if (conflicto.Telefono) TempData["ErrorMessageEditUser"] = "El teléfono ya está en uso.";
+
+            if (conflicto.Dni || conflicto.Usuario || conflicto.Email || conflicto.Telefono)
+            {
+                if (conflicto.Dni) TempData["ErrorMessageEditUser"] = "El DNI ya está en uso por otro usuario.";
+                else if (conflicto.Usuario) TempData["ErrorMessageEditUser"] = "El nombre de usuario ya está en uso.";
+                else if (conflicto.Email) TempData["ErrorMessageEditUser"] = "El correo ya está en uso.";
+                else if (conflicto.Telefono) TempData["ErrorMessageEditUser"] = "El teléfono ya está en uso.";
+
+                return View(usuarioModel);
+            }
+
+
+
 
             if (!ModelState.IsValid)
             {

@@ -64,6 +64,11 @@
                         <h3>@(lang == "es" ? "Gestión de pedidos" : "Order Management")</h3>
                     </a>
                 </li>
+                <li class="@(currentAction == "MyAccount" ? "active" : "")">
+                    <a asp-controller="AdminVentas" asp-action="MyAccount">
+                        <h3>@(lang == "es" ? "Mi cuenta" : "My Account")</h3>
+                    </a>
+                </li>
 
             </ul>
 

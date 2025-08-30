@@ -10,6 +10,20 @@
     <h3>@(lang == "es" ? "Agregar Nuevo Cliente" : "Add New Client")</h3>
     @Html.AntiForgeryToken()
 
+    @if (TempData["ErrorMessageCreateClient"] != null)
+    {
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageCreateClient"]</p>
+    </div>
+    }
+
+    @if (TempData["MensajeExitoFormularioCrearCliente"] != null)
+{
+    <div class="alert alert-danger">
+        <p class="exito">@TempData["MensajeExitoFormularioCrearCliente"]</p>
+    </div>
+}
+
     <div class="row">
         <label for="Dni">@((lang == "es") ? "Dni*" : "Dni *")</label>
         <input type="text" id="Dni" name="Dni" required>
@@ -45,19 +59,7 @@
     <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
 
-    @if (TempData["ErrorMessageCreateClient"] != null)
-    {
-    <div class="alert alert-danger">
-        <p class="error">@TempData["ErrorMessageCreateClient"]</p>
-    </div>
-    }
 
-    @if (TempData["MensajeExitoFormularioCrearCliente"] != null)
-{
-    <div class="alert alert-danger">
-        <p class="exito">@TempData["MensajeExitoFormularioCrearCliente"]</p>
-    </div>
-}
 
 </form>
 

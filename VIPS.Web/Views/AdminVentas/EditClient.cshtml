@@ -1,3 +1,5 @@
+@model VIPS.Web.Models.ClienteModel
+
 @{
     Layout = "_AdminVentasLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
@@ -7,8 +9,27 @@
     <h3>@(lang == "es" ? "Editar Cliente" : "Edit Client")</h3>
     @Html.AntiForgeryToken()
 
+    @if (TempData["ErrorMessageEditClient"] != null)
+    {
+        <div class="alert alert-danger">
+            <p class="error">@TempData["ErrorMessageEditClient"]</p>
+        </div>
+    }
+
+        @if (TempData["MensajeExito"] != null)
+    {
+        <div class="alert alert-danger">
+            <p class="exito">@TempData["MensajeExito"]</p>
+        </div>
+    }
+
     <!-- Campo oculto para el ID del cliente -->
     <input type="hidden" id="IdCliente" name="IdCliente" value="@Model.IdCliente" />
+
+    <div class="row">
+        <label for="Dni">@((lang == "es") ? "Dni *" : "Dni *")</label>
+        <input type="text" id="Dni" name="Dni" value="@Model.Dni" required>
+    </div>
 
     <div class="row">
         <label for="Nombre">@((lang == "es") ? "Nombre *" : "First Name *")</label>
@@ -38,10 +59,5 @@
     <button type="submit" class="btn-principal">@(lang == "es" ? "Guardar Cambios" : "Save Changes")</button>
     <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Cancelar" : "Cancel")</a>
 
-    @if (TempData["ErrorMessageEditUser"] != null)
-    {
-    <div class="alert alert-danger">
-        <p class="error">@TempData["ErrorMessageEditUser"]</p>
-    </div>
-    }
+
 </form>

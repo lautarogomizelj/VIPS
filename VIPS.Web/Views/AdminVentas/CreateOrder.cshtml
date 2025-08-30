@@ -1,0 +1,80 @@
+@model ClienteModel
+
+@{
+    Layout = "_AdminVentasLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+
+<form asp-controller="AdminVentas" asp-action="CreateOrder" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Agregar Nuevo Pedido" : "Add New Order")</h3>
+    @Html.AntiForgeryToken()
+
+    @if (TempData["ErrorMessageCreateOrder"] != null)
+    {
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageCreateOrder"]</p>
+    </div>
+    }
+
+    @if (TempData["MensajeExitoFormularioCrearPedido"] != null)
+{
+    <div class="alert alert-danger">
+        <p class="exito">@TempData["MensajeExitoFormularioCrearPedido"]</p>
+    </div>
+}
+
+
+
+    <!--aca va la parte del dni existente-->
+
+    <div class="row">
+        <label for="Cliente">@((lang == "es") ? "Cliente *" : "Client *")</label>
+
+        <select id="Cliente" name="Cliente" asp-items="ViewBag.Clientes" required>
+            <option value="">@(lang == "es" ? "Seleccione un cliente" : "Select a client")</option>
+        </select>
+
+        <span class="field-validation-error" data-valmsg-for="Cliente" data-valmsg-replace="true"></span>
+    </div>
+
+
+
+    <!-- Dimensiones -->
+
+    <div class="row">
+        <label for="Ancho">@((lang == "es") ? "Ancho (m) *" : "Width (m)  *")</label>
+        <input type="number" id="Nombre" name="Ancho" required>
+    </div>
+
+    <div class="row">
+        <label for="Largo">@((lang == "es") ? "Largo (m) *" : "Long (m)*")</label>
+        <input type="number" id="Largo" name="Largo" required>
+    </div>
+
+    <div class="row">
+        <label for="Alto">@((lang == "es") ? "Alto (m) *" : "Height (m) *")</label>
+        <input type="number" id="Alto" name="Alto" required>
+    </div>
+
+    <div class="row">
+        <label for="Peso">@((lang == "es") ? "Peso (kg) *" : "Weight (kg) *")</label>
+        <input type="number" id="Peso" name="Peso" required>
+    </div>
+
+
+
+
+    <!-- Domicilio -->
+
+    <div class="row">
+        <label for="DomicilioEntrega">@((lang == "es") ? "Domicilio de entrega *" : "Order address *")</label>
+        <input type="text" id="DomicilioEntrega" name="DomicilioEntrega" required placeholder="Ej: Luis Maria Campos 1149, Buenos Aires">
+    </div>
+
+
+    <button type="submit" class="btn-principal">@(lang == "es" ? "Crear Pedido" : "Create Order")</button>
+
+    <a class="restablecer" asp-controller="AdminVentas" asp-action="OrderManagement">@((lang == "es") ? "Volver" : "Back")</a>
+</form>
+

@@ -1,0 +1,69 @@
+@{
+    Layout = "_AdminVentasLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+<h2>@(lang == "es" ? "Administrar mi cuenta" : "Manage My Account")</h2>
+
+
+
+<form class="CRUD"  style="width: 350px;">
+    <a class="btn-principal" asp-controller="Auth" asp-action="ChangePasswordAccount">
+        @(lang == "es" ? "Cambiar Contraseña" : "Change Password")
+    </a>
+
+    @if (TempData["ErrorMessageChange"] != null)
+    {
+        <div class="alert alert-danger">
+            <p style="color:red;">@TempData["ErrorMessageChange"]</p>
+        </div>
+    }
+
+        @if (TempData["SuccessMessageChange"] != null)
+    {
+        <div class="alert alert-danger">
+            <p style="color:green;">@TempData["SuccessMessageChange"]</p>
+        </div>
+    }
+</form>
+
+
+
+<form asp-controller="AdminVentas" asp-action="CambiarIdioma" method="post" class="CRUD" style="width: 350px;">
+    @Html.AntiForgeryToken()
+    <h3>@((lang == "es") ? "Seleccionar idioma interfaz" : "Select Interface Language")</h3>
+
+    <div class="row">
+        <select id="nuevoLang" name="nuevoLang" required>
+            @if(lang == "es")
+        {
+            <option value="es" selected>Español</option>
+            <option value="en">Inglés</option>
+        }
+        else
+        {
+            <option value="es">Spanish</option>
+            <option value="en" selected>English</option>
+        }
+        </select>
+    </div>
+
+    <button type="submit" class="btn-principal">
+        @(lang == "es" ? "Cambiar idioma" : "Change Language")
+    </button>
+
+    @if (TempData["SuccessMessageChangeLanguage"] != null)
+    {
+    <div class="alert alert-danger">
+        <p style="color:green;">@TempData["SuccessMessageChangeLanguage"]</p>
+    </div>
+    }
+
+    @if (TempData["ErrorMessageChangeLanguage"] != null)
+    {
+    <div class="alert alert-danger">
+        <p style="color:red;">@TempData["ErrorMessageChangeLanguage"]</p>
+    </div>
+    }
+
+</form>
