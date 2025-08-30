@@ -64,7 +64,24 @@ namespace VIPS.Web.Services
         */
 
 
+        public int RetornarIdDomicilioConDomicilio(string domicilioEntrega)
+        {
+            string query = @"SELECT idDomicilioEntrega FROM DomicilioEntrega WHERE domicilioEntrega = @domicilioEntrega and eliminado = 0";
 
+            using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+            using var command = new SqlCommand(query, conn);
+            command.Parameters.AddWithValue("@domicilioEntrega", domicilioEntrega);
+
+            conn.Open();
+            object? result = command.ExecuteScalar();
+
+            if (result != null && int.TryParse(result.ToString(), out int idDomicilioEntrega))
+            {
+                return idDomicilioEntrega;
+            }
+
+            return -1; // si no encuentra el usuario
+        }
 
 
         public List<OrderViewModel> ObtenerPedidos(string columna, string orden)

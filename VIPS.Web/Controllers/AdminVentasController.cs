@@ -356,10 +356,8 @@ namespace VIPS.Web.Controllers
             return View();
         }
 
-      
 
-
-
+        /*-------------------------------------------------*/
 
         [HttpGet]
         public IActionResult CreateOrder()
@@ -381,7 +379,7 @@ namespace VIPS.Web.Controllers
 
 
         [HttpGet("DeleteOrder/{idPedido}")]
-        public IActionResult DeleteOrder(int idPedido)
+        public IActionResult DeleteOrder(int idPedido, OrderModel model)
         {
             // Leer claims desde la cookie
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
@@ -391,6 +389,74 @@ namespace VIPS.Web.Controllers
             ViewBag.NombreUsuario = nombreUsuario;
             ViewBag.RolUsuario = rolUsuario;
             ViewBag.idPedido = idPedido;
+
+            /*try
+            {
+                // 1. Validaciones
+                if (model.Ancho <= 0 || model.Largo <= 0 || model.Alto <= 0 || model.Peso <= 0)
+                {
+                    TempData["ErrorMessageCreateOrder"] = "Las dimensiones y el peso deben ser mayores a cero.";
+                    return View(model);
+                }
+
+                var cliente = _clienteService.retornarClienteModelConIdCliente(model.IdCliente);
+                if (cliente == null)
+                {
+                    TempData["ErrorMessageCreateOrder"] = "Seleccione un cliente válido.";
+                    return View(model);
+                }
+
+                if (string.IsNullOrWhiteSpace(model.DomicilioEntrega))
+                {
+                    TempData["ErrorMessageCreateOrder"] = "Ingrese una dirección válida.";
+                    return View(model);
+                }
+
+
+                // 2. Obtener/crear domicilio
+                var idDomicilio = _orderService.BuscarIdDomicilioConDomicilio(model.DomicilioEntrega);
+
+                if (idDomicilio == null || idDomicilio == -1)
+                {
+                    //creo domicilio
+
+                    var datosApi = _geoApi.ObtenerDatosDireccion(model.DireccionTexto);
+                    var domicilioCreado = _domicilioService.CrearDomicilio(datosApi);
+                    idDomicilio = domicilioCreado.IdDomicilioEntrega;
+                }
+
+                model.IdDomicilioEntrega = idDomicilio;
+
+
+
+
+
+
+                var resultado = _clientService.CrearCliente(clienteModel);
+
+
+                if (!resultado.Exito)
+                {
+                    // Mostrar error en la misma vista
+                    TempData["ErrorMessageCreateClient"] = resultado.Mensaje;
+
+                    return View(clienteModel);
+                }
+
+                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Crear cliente", "Se creo cliente con nombre: " + clienteModel.Nombre, ipAddress);
+
+                TempData["MensajeExitoFormularioCrearCliente"] = resultado.Mensaje;
+                return RedirectToAction("CreateClient");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessageCreateClient"] = $"Error interno del servidor: {ex.Message}";
+                return View(clienteModel);
+            }*/
+
+
 
             return View();
         }

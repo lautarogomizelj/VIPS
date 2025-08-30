@@ -1,0 +1,97 @@
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+<!DOCTYPE html>
+<html lang="@lang">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Logistico Panel - VIPS</title>
+    <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
+    <link rel="shortcut icon" href="~/images/logo.png" />
+</head>
+<body>
+    <header class="flex">
+        <img src="~/images/logo.png" alt="Logo empresa VIPS">
+
+        <h1>Admin Logistico - Panel VIPS</h1>
+
+
+        <div class="contenedorUsuario flex">
+            <div class="left">
+                <span>@ViewBag.NombreUsuario</span>
+            </div>
+            <div class="right">
+
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g id="SVGRepo_bgCarrier" stroke-width="0" />
+                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"
+                    <g id="SVGRepo_iconCarrier"> <path d="M5 21C5 17.134 8.13401 14 12 14C15.866 14 19 17.134 19 21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="#162938" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /> </g>
+                </svg>
+            </div>
+
+            <div class="dropdownContent">
+                <a asp-controller="Auth" asp-action="Logout">
+                    <span>@(lang == "es" ? "Cerrar sesión" : "Logout")</span>
+                </a>
+            </div>
+
+        </div>
+    </header>
+
+
+
+    <main>
+        <section class="index flex">
+
+            <ul class="primary-navigation">
+                <li class="@(currentAction == "Index" ? "active" : "")">
+                    <a asp-controller="AdminLogistico" asp-action="Index">
+                        <h3>@(lang == "es" ? "Inicio" : "Home")</h3>
+                    </a>
+                </li>
+
+                <li class="@(currentAction == "OrderManagement" ? "active" : "")">
+                    <a asp-controller="AdminLogistico" asp-action="OrderManagement">
+                        <h3>@(lang == "es" ? "Gestión de pedidos" : "Order Management")</h3>
+                    </a>
+                </li>
+                <li class="@(currentAction == "FleetManagement" ? "active" : "")">
+                    <a asp-controller="AdminLogistico" asp-action="FleetManagement">
+                        <h3>@(lang == "es" ? "Gestión de flota" : "Fleet Management")</h3>
+                    </a>
+                </li>
+
+                <li class="@(currentAction == "MyAccount" ? "active" : "")">
+                    <a asp-controller="AdminLogistico" asp-action="MyAccount">
+                        <h3>@(lang == "es" ? "Mi cuenta" : "My Account")</h3>
+                    </a>
+                </li>
+
+            </ul>
+
+            <div class="general-container">
+
+                <div class="information-container">
+                    @RenderBody()
+                </div>
+
+            </div>
+
+
+
+        </section>
+
+    </main>
+
+
+    <footer></footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+
+</html>

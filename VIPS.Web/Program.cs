@@ -36,6 +36,8 @@ builder.Services.AddScoped<LogService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ClientService>();
 builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<FleetService>();
+
 
 
 

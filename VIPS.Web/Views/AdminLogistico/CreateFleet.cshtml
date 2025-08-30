@@ -1,0 +1,65 @@
+@model ClienteModel
+
+@{
+    Layout = "_AdminVentasLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+
+<form asp-controller="AdminVentas" asp-action="CreateClient" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Agregar Nuevo Cliente" : "Add New Client")</h3>
+    @Html.AntiForgeryToken()
+
+    @if (TempData["ErrorMessageCreateClient"] != null)
+    {
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageCreateClient"]</p>
+    </div>
+    }
+
+    @if (TempData["MensajeExitoFormularioCrearCliente"] != null)
+{
+    <div class="alert alert-danger">
+        <p class="exito">@TempData["MensajeExitoFormularioCrearCliente"]</p>
+    </div>
+}
+
+    <div class="row">
+        <label for="Dni">@((lang == "es") ? "Dni*" : "Dni *")</label>
+        <input type="text" id="Dni" name="Dni" required>
+    </div>
+
+    <div class="row">
+        <label for="Nombre">@((lang == "es") ? "Nombre *" : "First Name *")</label>
+        <input type="text" id="Nombre" name="Nombre" required>
+    </div>
+
+    <div class="row">
+        <label for="Apellido">@((lang == "es") ? "Apellido *" : "Last Name *")</label>
+        <input type="text" id="Apellido" name="Apellido" required>
+    </div>
+
+    <div class="row">
+        <label for="Email">@((lang == "es") ? "Email *" : "Email *")</label>
+        <input type="email" id="Email" name="Email" required>
+    </div>
+
+    <div class="row">
+        <label for="Telefono">@((lang == "es") ? "Teléfono *" : "Phone *")</label>
+        <input type="text" id="Telefono" name="Telefono" required>
+    </div>
+
+    <div class="row">
+        <label for="DomicilioLegal">@((lang == "es") ? "Domicilio Legal *" : "Legal Address *")</label>
+        <input type="text" id="DomicilioLegal" name="DomicilioLegal" required>
+    </div>
+
+
+    <button type="submit" class="btn-principal">@(lang == "es" ? "Crear Cliente" : "Create Client")</button>
+    <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Volver" : "Back")</a>
+
+
+
+
+</form>
+

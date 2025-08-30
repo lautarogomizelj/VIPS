@@ -3,14 +3,14 @@
     string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
-<form asp-action="DeleteUser" asp-controller="AdminGeneral" method="post" class="CRUD">
-    <h3>@(lang == "es" ? "Eliminar usuario" : "Delet User")</h3>
+<form asp-action="DeleteClient" asp-controller="AdminVentas" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Eliminar cliente" : "Delet Client")</h3>
     @Html.AntiForgeryToken()
 
-    @if (TempData["ErrorMessageDeleteUser"] != null)
+    @if (TempData["ErrorMessageDeleteClient"] != null)
    {
     <div class="alert alert-danger">
-        <p class="error">@TempData["ErrorMessageDeleteUser"]</p>
+        <p class="error">@TempData["ErrorMessageDeleteClient"]</p>
     </div>
    }
 
@@ -21,13 +21,13 @@
     </div>
    }
 
-    <input type="hidden" value="ViewBag.Usuario" name="usuario" />
+    <input type="hidden" value="@ViewBag.idCliente" name="idCliente"/>
 
     <div class="row">
         <label for="eleccion">
             @(lang == "es"
-                ? "Desea eliminar el usuario " + ViewBag.Usuario
-                : "You wish to delete user " + ViewBag.Usuario)
+                ? "Desea eliminar el cliente " + ViewBag.idCliente
+                : "You wish to delete client" + ViewBag.idCliente)
         </label>
 
         <select name="eleccion">
@@ -37,7 +37,7 @@
     </div>
 
     <button type="submit" class="btn-principal">@((lang == "es") ? "Confirmar cambios" : "Confirm Changes")</button>
-    <a class="restablecer" asp-controller="AdminGeneral" asp-action="UserManagement">@((lang == "es") ? "Volver" : "Back")</a>
+    <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
 
 
