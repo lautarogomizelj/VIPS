@@ -168,9 +168,267 @@ namespace VIPS.Web.Controllers
 
             return RedirectToAction("MyAccount");
         }
-    
-    
-    
-    
+
+
+        /*+-----------------------------ABM FLEET-----------------------------------------*/
+        /*---------------GET-------------*/
+
+        [HttpGet]
+        public IActionResult CreateFleet()
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            return View();
+        }
+
+        [HttpGet("DeleteFleet/{patente}")]
+        public IActionResult DeleteFleet(string patente)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.patente = patente;
+
+            return View();
+        }
+
+        [HttpGet("EditFleet/{patente}")]
+        public IActionResult EditFleet(string patente)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.patente = patente;
+
+
+            return View(_fleetService.retornarFleetModelConPatente(patente));
+        }
+
+
+        /*---------------POST-------------*/
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateFleet(FleetModel fleetModel)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessageCreateFleet"] = "Ocurrio un error.";
+
+                    return View(fleetModel);
+                }
+
+                // Validaciones básicas
+                if (string.IsNullOrEmpty(fleetModel.Patente) ||
+                    fleetModel.Ancho <= 0 ||
+                    fleetModel.Largo <= 0 ||
+                    fleetModel.Alto <= 0 ||
+                    fleetModel.CapacidadPeso <= 0 ||
+                    fleetModel.CapacidadVolumen <= 0 ||
+                    (fleetModel.Estado < 0 || fleetModel.Estado > 1))
+                {
+                    TempData["ErrorMessageCreateFleet"] = "Todos los campos obligatorios deben ser completados correctamente";
+                    return View(fleetModel);
+                }
+
+                // Verificar si la patente ya existe
+
+                var vehiculoDb = _fleetService.retornarFleetModelConPatente(fleetModel.Patente);
+                if (vehiculoDb != null)
+                {
+                    TempData["ErrorMessageCreateFleet"] = "Patente ya ingresada, ingrese devuelta..";
+
+                    return View(fleetModel);
+                }
+
+
+                var resultado = _fleetService.CrearFleet(fleetModel);
+
+
+                if (!resultado.Exito)
+                {
+                    // Mostrar error en la misma vista
+                    TempData["ErrorMessageCreateClient"] = resultado.Mensaje;
+
+                    return View(fleetModel);
+                }
+
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Crear vehiculo", "Se creo el vehiculo con patenete: " + fleetModel.Patente, ipAddress);
+
+                TempData["MensajeExitoFormularioCrearVehiculo"] = resultado.Mensaje;
+                return View();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessageCreateFleet"] = $"Error interno del servidor: {ex.Message}";
+                return View(fleetModel);
+            }
+        }
+
+
+        [HttpPost("DeleteFleet/{patente}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteFleet(string eleccion, string patente)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.patente = patente;
+
+
+            if (eleccion == "no")
+            {
+                TempData["ErrorMessageDeleteFleet"] = "Ocurrio un error.";
+
+                return View();
+            }
+
+            var flotaDb = _fleetService.retornarFleetModelConPatente(patente);
+
+            if (flotaDb == null)
+            {
+                TempData["ErrorMessageDeleteFleet"] = "El vehiculo no existe.";
+                return View();
+            }
+
+
+            var resultado = _fleetService.EliminarFleet(patente);
+
+
+            if (!resultado.Exito)
+            {
+                // Mostrar error en la misma vista
+                TempData["ErrorMessageDeleteFleet"] = $"Error al eliminar vehiculo: {resultado.Mensaje}";
+            }
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion flota", nombreUsuario + " Elimino el vehiculo con patente: " + patente, ipAddress);
+
+            TempData["SuccessDeleteMessage"] = $"Vehiculo con patente '{patente}' eliminado correctamente";
+
+            return View();
+        }
+
+        [HttpPost("EditFleet/{patente}")]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditFleet(string patente, FleetModel fleetmodel)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.patente = patente;
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessageEditFleet"] = "Ocurrio un error.";
+
+                return View(fleetmodel);
+            }
+
+            // Validaciones básicas
+            if (fleetmodel.Ancho <= 0 ||
+                fleetmodel.Largo <= 0 ||
+                fleetmodel.Alto <= 0 ||
+                fleetmodel.CapacidadPeso <= 0 ||
+                fleetmodel.CapacidadVolumen <= 0 ||
+                (fleetmodel.Estado < 0 || fleetmodel.Estado > 1))
+            {
+                TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados correctamente";
+                return View(fleetmodel);
+            }
+
+            //verifico que no exista vehiculo con esa patente
+
+            var fleetDb = _fleetService.retornarFleetModelConPatente(patente);
+
+            if (fleetDb != null)
+            {
+                TempData["ErrorMessageEditFleet"] = "Ya existe un vehiculo con esa patente.";
+
+                return View(fleetmodel);
+            }
+
+
+            var conflicto = _fleetService.ExisteConflicto(fleetmodel);
+
+            if (conflicto.Ancho || conflicto.Largo || conflicto.Alto ||
+                conflicto.CapacidadPeso || conflicto.CapacidadVolumen || conflicto.Estado)
+            {
+               if (conflicto.Ancho)
+                    TempData["ErrorMessageEditFleet"] = "El ancho ya está en uso por otro vehículo.";
+                else if (conflicto.Largo)
+                    TempData["ErrorMessageEditFleet"] = "El largo ya está en uso por otro vehículo.";
+                else if (conflicto.Alto)
+                    TempData["ErrorMessageEditFleet"] = "El alto ya está en uso por otro vehículo.";
+                else if (conflicto.CapacidadPeso)
+                    TempData["ErrorMessageEditFleet"] = "La capacidad de peso ya está en uso por otro vehículo.";
+                else if (conflicto.CapacidadVolumen)
+                    TempData["ErrorMessageEditFleet"] = "La capacidad de volumen ya está en uso por otro vehículo.";
+                else if (conflicto.Estado)
+                    TempData["ErrorMessageEditFleet"] = "El estado ya está en uso por otro vehículo.";
+
+                return View(fleetmodel);
+            }
+
+
+
+            if (!ModelState.IsValid)
+            {
+                return View(fleetmodel);
+            }
+
+            ResultadoOperacion resultado = _fleetService.UpdateFleet(fleetmodel);
+
+            if (!resultado.Exito)
+            {
+                TempData["ErrorMessageEditUser"] = resultado.Mensaje;
+                return View(fleetmodel);
+            }
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion flota", nombreUsuario + " Edito el vehiculo con patente : " + patente, ipAddress);
+
+            TempData["MensajeExito"] = resultado.Mensaje;
+            return View(fleetmodel);
+        }
+
+
+
+
     }
 }

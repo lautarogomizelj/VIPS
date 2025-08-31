@@ -1,62 +1,83 @@
 @model ClienteModel
 
 @{
-    Layout = "_AdminVentasLayout";
+    Layout = "_AdminLogisticoLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
 
-<form asp-controller="AdminVentas" asp-action="CreateClient" method="post" class="CRUD">
-    <h3>@(lang == "es" ? "Agregar Nuevo Cliente" : "Add New Client")</h3>
+<form asp-controller="AdminLogistico" asp-action="CreateFleet" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Agregar Nuevo Vehiculo" : "Add New Fleet")</h3>
     @Html.AntiForgeryToken()
 
-    @if (TempData["ErrorMessageCreateClient"] != null)
+    @if (TempData["ErrorMessageCreateFleet"] != null)
     {
     <div class="alert alert-danger">
-        <p class="error">@TempData["ErrorMessageCreateClient"]</p>
+        <p class="error">@TempData["ErrorMessageCreateFleet"]</p>
     </div>
     }
 
-    @if (TempData["MensajeExitoFormularioCrearCliente"] != null)
+    @if (TempData["MensajeExitoFormularioCrearVehiculo"] != null)
 {
     <div class="alert alert-danger">
-        <p class="exito">@TempData["MensajeExitoFormularioCrearCliente"]</p>
+        <p class="exito">@TempData["MensajeExitoFormularioCrearVehiculo"]</p>
     </div>
 }
 
+
     <div class="row">
-        <label for="Dni">@((lang == "es") ? "Dni*" : "Dni *")</label>
-        <input type="text" id="Dni" name="Dni" required>
+        <label for="Patente">@((lang == "es") ? "Patente  *" : "Vehicle ID *")</label>
+        <input type="text" id="Patente" name="Patente" required>
+    </div>
+
+    <!-- Dimensiones -->
+
+
+    <div class="row">
+        <label for="Ancho">@((lang == "es") ? "Ancho (m) *" : "Width (m)  *")</label>
+        <input type="number" id="Nombre" name="Ancho" required>
     </div>
 
     <div class="row">
-        <label for="Nombre">@((lang == "es") ? "Nombre *" : "First Name *")</label>
-        <input type="text" id="Nombre" name="Nombre" required>
+        <label for="Largo">@((lang == "es") ? "Largo (m) *" : "Long (m)*")</label>
+        <input type="number" id="Largo" name="Largo" required>
     </div>
 
     <div class="row">
-        <label for="Apellido">@((lang == "es") ? "Apellido *" : "Last Name *")</label>
-        <input type="text" id="Apellido" name="Apellido" required>
+        <label for="Alto">@((lang == "es") ? "Alto (m) *" : "Height (m) *")</label>
+        <input type="number" id="Alto" name="Alto" required>
+    </div>
+
+    <!-- Capaicdad de carga max -->
+
+    <div class="row">
+        <label for="CapacidadPeso">@((lang == "es") ? "CapacidadPeso (kg) *" : "Max weight (kg)*")</label>
+        <input type="number" id="CapacidadPeso" name="CapacidadPeso" required>
     </div>
 
     <div class="row">
-        <label for="Email">@((lang == "es") ? "Email *" : "Email *")</label>
-        <input type="email" id="Email" name="Email" required>
+        <label for="CapacidadVolumen">@((lang == "es") ? "CapacidadVolumen (m3) *" : "Max volume (m3) *")</label>
+        <input type="number" id="CapacidadVolumen" name="CapacidadVolumen" required>
     </div>
+
+
+    <!--Estado (inactivo o activo)-->
 
     <div class="row">
-        <label for="Telefono">@((lang == "es") ? "Teléfono *" : "Phone *")</label>
-        <input type="text" id="Telefono" name="Telefono" required>
+        <label for="Estado">@((lang == "es") ? "Inidique el estado (activo/inactivo) *" : "Select vehicle state (active/inactive) *")</label>
+
+        <select name="Estado">
+            <option value="">@(lang == "es" ? "Indique el estado" : "Select vehicle state")</option>
+            <option value="0">@(lang == "es" ? "Inactivo" : "Inactive")</option>
+            <option value="1">@(lang == "es" ? "Activo" : "Active")</option>
+
+        </select>
+
     </div>
 
-    <div class="row">
-        <label for="DomicilioLegal">@((lang == "es") ? "Domicilio Legal *" : "Legal Address *")</label>
-        <input type="text" id="DomicilioLegal" name="DomicilioLegal" required>
-    </div>
 
-
-    <button type="submit" class="btn-principal">@(lang == "es" ? "Crear Cliente" : "Create Client")</button>
-    <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Volver" : "Back")</a>
+    <button type="submit" class="btn-principal">@(lang == "es" ? "Crear vehiculo" : "Create Fleet")</button>
+    <a class="restablecer" asp-controller="AdminLogistico" asp-action="FleetManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
 
 

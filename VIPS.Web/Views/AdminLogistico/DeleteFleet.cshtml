@@ -1,16 +1,16 @@
 @{
-    Layout = "_AdminLayout";
+    Layout = "_AdminLogisticoLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
-<form asp-action="DeleteClient" asp-controller="AdminVentas" method="post" class="CRUD">
-    <h3>@(lang == "es" ? "Eliminar cliente" : "Delet Client")</h3>
+<form asp-action="DeleteFleet" asp-controller="AdminLogistico" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Eliminar vehiculo" : "Delet Fleet")</h3>
     @Html.AntiForgeryToken()
 
-    @if (TempData["ErrorMessageDeleteClient"] != null)
+    @if (TempData["ErrorMessageDeleteFleet"] != null)
    {
     <div class="alert alert-danger">
-        <p class="error">@TempData["ErrorMessageDeleteClient"]</p>
+        <p class="error">@TempData["ErrorMessageDeleteFleet"]</p>
     </div>
    }
 
@@ -21,13 +21,13 @@
     </div>
    }
 
-    <input type="hidden" value="@ViewBag.idCliente" name="idCliente"/>
+    <input type="hidden" value="@ViewBag.patente" name="patente"/>
 
     <div class="row">
         <label for="eleccion">
             @(lang == "es"
-                ? "Desea eliminar el cliente " + ViewBag.idCliente
-                : "You wish to delete client" + ViewBag.idCliente)
+                ? "Desea eliminar el vehiculo con patente: " + ViewBag.patente
+                : "You wish to delete fleet with id vehicle: " + ViewBag.patente)
         </label>
 
         <select name="eleccion">
@@ -37,7 +37,7 @@
     </div>
 
     <button type="submit" class="btn-principal">@((lang == "es") ? "Confirmar cambios" : "Confirm Changes")</button>
-    <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Volver" : "Back")</a>
+    <a class="restablecer" asp-controller="AdminLogistico" asp-action="FleetManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
 
 

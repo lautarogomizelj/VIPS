@@ -1,63 +1,78 @@
-@model VIPS.Web.Models.ClienteModel
+@model VIPS.Web.Models.FleetModel
 
 @{
     Layout = "_AdminVentasLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
-<form asp-controller="AdminVentas" asp-action="EditClient" method="post" class="CRUD">
+<form asp-controller="AdminLogistico" asp-action="EditFleet" method="post" class="CRUD">
     <h3>@(lang == "es" ? "Editar Cliente" : "Edit Client")</h3>
     @Html.AntiForgeryToken()
 
-    @if (TempData["ErrorMessageEditClient"] != null)
+    @if (TempData["ErrorMessageEditFleet"] != null)
     {
-        <div class="alert alert-danger">
-            <p class="error">@TempData["ErrorMessageEditClient"]</p>
-        </div>
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageEditFleet"]</p>
+    </div>
     }
 
-        @if (TempData["MensajeExito"] != null)
+    @if (TempData["MensajeExito"] != null)
     {
-        <div class="alert alert-danger">
-            <p class="exito">@TempData["MensajeExito"]</p>
-        </div>
+    <div class="alert alert-danger">
+        <p class="exito">@TempData["MensajeExito"]</p>
+    </div>
     }
 
-    <!-- Campo oculto para el ID del cliente -->
-    <input type="hidden" id="IdCliente" name="IdCliente" value="@Model.IdCliente" />
+    <!-- Campo oculto para la patente -->
+    <input type="hidden" id="Patente" name="Patente" value="@Model.Patente">
+
+
+    <!-- Dimensiones -->
+
 
     <div class="row">
-        <label for="Dni">@((lang == "es") ? "Dni *" : "Dni *")</label>
-        <input type="text" id="Dni" name="Dni" value="@Model.Dni" required>
+        <label for="Ancho">@((lang == "es") ? "Ancho (m) *" : "Width (m)  *")</label>
+        <input type="number" id="Nombre" name="Ancho" required value="@Model.Ancho">
     </div>
 
     <div class="row">
-        <label for="Nombre">@((lang == "es") ? "Nombre *" : "First Name *")</label>
-        <input type="text" id="Nombre" name="Nombre" value="@Model.Nombre" required>
+        <label for="Largo">@((lang == "es") ? "Largo (m) *" : "Long (m)*")</label>
+        <input type="number" id="Largo" name="Largo" required value="@Model.Largo">
     </div>
 
     <div class="row">
-        <label for="Apellido">@((lang == "es") ? "Apellido *" : "Last Name *")</label>
-        <input type="text" id="Apellido" name="Apellido" value="@Model.Apellido" required>
+        <label for="Alto">@((lang == "es") ? "Alto (m) *" : "Height (m) *")</label>
+        <input type="number" id="Alto" name="Alto" required value="@Model.Alto">
+    </div>
+
+    <!-- Capaicdad de carga max -->
+
+    <div class="row">
+        <label for="CapacidadPeso">@((lang == "es") ? "CapacidadPeso (kg) *" : "Max weight (kg)*")</label>
+        <input type="number" id="CapacidadPeso" name="CapacidadPeso" required value="@Model.CapacidadPeso">
     </div>
 
     <div class="row">
-        <label for="Email">@((lang == "es") ? "Email *" : "Email *")</label>
-        <input type="email" id="Email" name="Email" value="@Model.Email" required>
+        <label for="CapacidadVolumen">@((lang == "es") ? "CapacidadVolumen (m3) *" : "Max volume (m3) *")</label>
+        <input type="number" id="CapacidadVolumen" name="CapacidadVolumen" required value="@Model.CapacidadVolumen">
     </div>
 
-    <div class="row">
-        <label for="Telefono">@((lang == "es") ? "Teléfono *" : "Phone *")</label>
-        <input type="text" id="Telefono" name="Telefono" value="@Model.Telefono" required>
-    </div>
+
+    <!--Estado (inactivo o activo)-->
 
     <div class="row">
-        <label for="DomicilioLegal">@((lang == "es") ? "Domicilio Legal *" : "Legal Address *")</label>
-        <input type="text" id="DomicilioLegal" name="DomicilioLegal" value="@Model.DomicilioLegal" required>
+        <label for="Estado">@((lang == "es") ? "Inidique el estado (activo/inactivo) *" : "Select vehicle state (active/inactive) *")</label>
+
+        <select name="Estado">
+            <option value="">@(lang == "es" ? "Indique el estado" : "Select vehicle state")</option>
+            <option value="0">@(lang == "es" ? "Inactivo" : "Inactive")</option>
+            <option value="1">@(lang == "es" ? "Activo" : "Active")</option>
+
+        </select>
     </div>
 
     <button type="submit" class="btn-principal">@(lang == "es" ? "Guardar Cambios" : "Save Changes")</button>
-    <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Cancelar" : "Cancel")</a>
+    <a class="restablecer" asp-controller="AdminLogistico" asp-action="FleetManagement">@((lang == "es") ? "Cancelar" : "Cancel")</a>
 
 
 </form>

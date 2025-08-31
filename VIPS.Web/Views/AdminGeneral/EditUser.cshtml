@@ -18,9 +18,9 @@
 
     @if (TempData["MensajeExito"] != null)
     {
-        <div class="alert alert-danger">
-            <p class="exito">@TempData["MensajeExito"]</p>
-        </div>
+    <div class="alert alert-danger">
+        <p class="exito">@TempData["MensajeExito"]</p>
+    </div>
     }
 
     <div class="row">
@@ -66,21 +66,14 @@
                placeholder="@(lang == "es" ? "Ingrese teléfono" : "Enter phone")" />
     </div>
 
-    <div class="row">
-        <label for="IdRol">@((lang == "es") ? "Rol" : "Role")</label>
-        <select id="IdRol" name="IdRol">
-            <option value="">@(lang == "es" ? "Seleccione un rol" : "Select a role")</option>
-            @foreach (var rol in ViewBag.Roles)
-            {
-                if(rol.IdRol == Model.IdRol){
-            <option value="@Model.IdRol" selected>@rol.Nombre</option>
-                }
-                else{
-            <option value="@rol.IdRol">@rol.Nombre</option>
-                }
-            }
-        </select>
+    <div class="row"> 
+    <label for="IdRol">@((lang == "es") ? "Rol" : "Role")</label>
+    <select id="IdRol" name="IdRol"> 
+        <option value="">@(lang == "es" ? "Seleccione un rol" : "Select a role")</option> @foreach (var rol in ViewBag.Roles) { if(rol.IdRol == Model.IdRol){
+        <option value="@Model.IdRol" selected>@rol.Nombre</option> } else{ <option value="@rol.IdRol">@rol.Nombre</option> } } 
+        </select> 
     </div>
+
 
 
     <button type="submit" class="btn-principal">@((lang == "es") ? "Confirmar cambios" : "Confirm Changes")</button>
