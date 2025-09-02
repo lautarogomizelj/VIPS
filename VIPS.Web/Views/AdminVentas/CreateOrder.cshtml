@@ -1,4 +1,4 @@
-@model ClienteModel
+@model OrderModel
 
 @{
     Layout = "_AdminVentasLayout";
@@ -31,7 +31,7 @@
     <div class="row">
         <label for="Cliente">@((lang == "es") ? "Cliente *" : "Client *")</label>
 
-        <select id="Cliente" name="Cliente" asp-items="ViewBag.Clientes" required>
+        <select id="Cliente" name="IdCliente" asp-items="ViewBag.Clientes" required>
             <option value="">@(lang == "es" ? "Seleccione un cliente" : "Select a client")</option>
         </select>
 
@@ -71,6 +71,17 @@
         <label for="DomicilioEntrega">@((lang == "es") ? "Domicilio de entrega *" : "Order address *")</label>
         <input type="text" id="DomicilioEntrega" name="DomicilioEntrega" required placeholder="Ej: Luis Maria Campos 1149, Buenos Aires">
     </div>
+
+    <div class="row">
+        <label for="DomicilioEntrega">@((lang == "es") ? "Domicilio de entrega *" : "Order address *")</label>
+        <input type="text" id="DomicilioEntrega" name="DomicilioEntrega" required placeholder="Ej: Luis Maria Campos 1149, Buenos Aires">
+    </div>
+
+    <div class="row">
+        <label for="DomicilioEntrega">@((lang == "es") ? "Domicilio de entrega *" : "Order address *")</label>
+        <input type="text" id="DomicilioEntrega" name="DomicilioEntrega" required placeholder="Ej: Luis Maria Campos 1149, Buenos Aires">
+    </div>
+
 
 
     <button type="submit" class="btn-principal">@(lang == "es" ? "Crear Pedido" : "Create Order")</button>

@@ -489,7 +489,8 @@ namespace VIPS.Web.Services
                 telefono = @telefono,
                 IdRol = @idRol,
                 nombre = @nombre,
-                apellido = @apellido
+                apellido = @apellido,
+                fechaModificacion = GETDATE()
             WHERE idUsuario = @idUsuario and eliminado = 0";
 
                 using var command = new SqlCommand(query, connection);

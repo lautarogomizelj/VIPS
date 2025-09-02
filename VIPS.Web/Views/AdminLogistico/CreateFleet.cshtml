@@ -1,4 +1,4 @@
-@model ClienteModel
+@model FleetModel
 
 @{
     Layout = "_AdminLogisticoLayout";
@@ -66,7 +66,7 @@
     <div class="row">
         <label for="Estado">@((lang == "es") ? "Inidique el estado (activo/inactivo) *" : "Select vehicle state (active/inactive) *")</label>
 
-        <select name="Estado">
+        <select name="Estado" required>
             <option value="">@(lang == "es" ? "Indique el estado" : "Select vehicle state")</option>
             <option value="0">@(lang == "es" ? "Inactivo" : "Inactive")</option>
             <option value="1">@(lang == "es" ? "Activo" : "Active")</option>

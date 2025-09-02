@@ -154,6 +154,7 @@ namespace VIPS.Web.Controllers
             {
                 _logService.AgregarLog(username, DateTime.Now, "Login", $"Error durante el login: {ex.Message}", ipAddress);
                 TempData["ErrorMessage"] = "Error interno del sistema. Intente nuevamente.";
+
             }
 
             return RedirectToAction("Login");
@@ -380,8 +381,7 @@ namespace VIPS.Web.Controllers
         {
             string query = @"UPDATE Usuario 
                             SET intentosFallidosLogin = 0, 
-                                fechaUltimoIntentoFallido = NULL,
-                                fechaModificacion = GETDATE()
+                                fechaUltimoIntentoFallido = NULL
                             WHERE usuario = @usuario";
 
             using var conn = new SqlConnection(_connectionString);
@@ -396,7 +396,6 @@ namespace VIPS.Web.Controllers
         {
             string query = @"UPDATE Usuario 
                             SET fechaUltimoLogin = GETDATE(),
-                                fechaModificacion = GETDATE(),
                                 intentosFallidosLogin = 0,
                                 fechaUltimoIntentoFallido = NULL
                             WHERE usuario = @usuario";
@@ -413,8 +412,7 @@ namespace VIPS.Web.Controllers
         {
             string query = @"UPDATE Usuario 
                             SET intentosFallidosLogin = intentosFallidosLogin + 1,
-                                fechaUltimoIntentoFallido = GETDATE(),
-                                fechaModificacion = GETDATE()
+                                fechaUltimoIntentoFallido = GETDATE()
                             WHERE usuario = @usuario";
 
             using var conn = new SqlConnection(_connectionString);

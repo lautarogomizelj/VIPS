@@ -1,18 +1,54 @@
-using System.Data;
+using System;
+using System.Collections.Generic;         // Para List<T>
+using System.Data;                        // Para DataTable, DataRow
+using System.Globalization;               // Para CultureInfo
+using System.IO;                          // Para MemoryStream (si usás PDFs)
+using System.Linq;                         // Para .Contains y otras operaciones LINQ
 using System.Text;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.ObjectPool;
+using PdfSharpCore.Pdf;       // Para PdfDocument
+using PdfSharpCore.Drawing;   // Para XGraphics, XFont, XRect, XBrushes, XStringFormats
+using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using VIPS.Web.Models;
+
 
 namespace VIPS.Web.Services
 {
     public class OrderService
     {
         private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
 
         public OrderService(IConfiguration configuration)
         {
             _configuration = configuration;
+            _httpClient = new HttpClient();
+            // Identificate para no ser bloqueado (User-Agent obligatorio en Nominatim)
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "VIPS-Logistics-System/1.0");
+        }
+
+        public async Task<(double lat, double lon, string postalCode)> GeocodeAsync(string direccion)
+        {
+            string url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(direccion)}&format=json&addressdetails=1";
+
+            var response = await _httpClient.GetStringAsync(url);
+            var results = JArray.Parse(response);
+
+            if (results.Count == 0)
+                throw new Exception("No se encontraron resultados para la dirección.");
+
+            var first = results[0];
+            double lat = double.Parse(first["lat"].ToString(), System.Globalization.CultureInfo.InvariantCulture);
+            double lon = double.Parse(first["lon"].ToString(), System.Globalization.CultureInfo.InvariantCulture);
+
+            string postalCode = "";
+            if (first["address"]?["postcode"] != null)
+                postalCode = first["address"]["postcode"].ToString();
+
+            return (lat, lon, postalCode);
         }
 
         /*public ResultadoOperacion CrearPedido(ClienteModel clienteModel)
@@ -135,5 +171,63 @@ namespace VIPS.Web.Services
                 return new List<OrderViewModel>();
             }
         }
+
+
+        public byte[] ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc")
+        {
+            // Traer los pedidos ordenados
+            var pedidos = ObtenerPedidos(columna, orden);
+
+            using (var ms = new MemoryStream())
+            {
+                PdfDocument document = new PdfDocument();
+                var page = document.AddPage();
+                XGraphics gfx = XGraphics.FromPdfPage(page);
+                XFont font = new XFont("Verdana", 10, XFontStyle.Regular);
+
+                // Posiciones iniciales
+                double startX = 20;
+                double startY = 50;
+                double rowHeight = 20;
+
+                // Dibujar encabezado
+                gfx.DrawString("ID Pedido", font, XBrushes.Black, new XRect(startX, startY, 60, rowHeight), XStringFormats.Center);
+                gfx.DrawString("ID Cliente", font, XBrushes.Black, new XRect(startX + 60, startY, 60, rowHeight), XStringFormats.Center);
+                gfx.DrawString("Peso", font, XBrushes.Black, new XRect(startX + 120, startY, 60, rowHeight), XStringFormats.Center);
+                gfx.DrawString("Fecha Creación", font, XBrushes.Black, new XRect(startX + 180, startY, 80, rowHeight), XStringFormats.Center);
+                gfx.DrawString("Fecha Despacho", font, XBrushes.Black, new XRect(startX + 260, startY, 80, rowHeight), XStringFormats.Center);
+                gfx.DrawString("Estado", font, XBrushes.Black, new XRect(startX + 340, startY, 80, rowHeight), XStringFormats.Center);
+                gfx.DrawString("Dirección", font, XBrushes.Black, new XRect(startX + 420, startY, 120, rowHeight), XStringFormats.Center);
+
+                // Línea debajo del encabezado
+                gfx.DrawLine(XPens.Black, startX, startY + rowHeight, startX + 540, startY + rowHeight);
+
+                // Dibujar filas
+                double y = startY + rowHeight;
+                foreach (var pedido in pedidos)
+                {
+                    y += rowHeight;
+                    gfx.DrawString(pedido.IdPedido.ToString(), font, XBrushes.Black, new XRect(startX, y, 60, rowHeight), XStringFormats.Center);
+                    gfx.DrawString(pedido.IdCliente.ToString(), font, XBrushes.Black, new XRect(startX + 60, y, 60, rowHeight), XStringFormats.Center);
+                    gfx.DrawString(pedido.Peso.ToString("N2"), font, XBrushes.Black, new XRect(startX + 120, y, 60, rowHeight), XStringFormats.Center);
+                    gfx.DrawString(pedido.FechaCreacion.ToString("dd/MM/yyyy"), font, XBrushes.Black, new XRect(startX + 180, y, 80, rowHeight), XStringFormats.Center);
+                    gfx.DrawString(pedido.FechaDespacho.ToString("dd/MM/yyyy"), font, XBrushes.Black, new XRect(startX + 260, y, 80, rowHeight), XStringFormats.Center);
+                    gfx.DrawString(pedido.EstadoPedido, font, XBrushes.Black, new XRect(startX + 340, y, 80, rowHeight), XStringFormats.Center);
+                    gfx.DrawString(pedido.Direccion, font, XBrushes.Black, new XRect(startX + 420, y, 120, rowHeight), XStringFormats.Center);
+
+                    // Línea debajo de la fila
+                    gfx.DrawLine(XPens.Gray, startX, y + rowHeight, startX + 540, y + rowHeight);
+                }
+
+                // Guardar PDF en memoria
+                document.Save(ms, false);
+
+                return ms.ToArray();
+            }
+        }
+
+
+
+
     }
 }

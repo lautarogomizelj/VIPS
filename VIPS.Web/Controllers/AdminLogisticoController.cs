@@ -12,6 +12,9 @@ using PdfSharpCore.Pdf;
 using PdfSharpCore.Drawing;
 using System.IO;
 
+
+
+
 namespace VIPS.Web.Controllers
 {
     [AuthorizeRole("adminLogistico")]
@@ -244,19 +247,34 @@ namespace VIPS.Web.Controllers
                     return View(fleetModel);
                 }
 
+                // Validaciones básicas: que no estén vacíos ni negativos
+                if (string.IsNullOrWhiteSpace(fleetModel.Ancho) ||
+                    string.IsNullOrWhiteSpace(fleetModel.Largo) ||
+                    string.IsNullOrWhiteSpace(fleetModel.Alto) ||
+                    string.IsNullOrWhiteSpace(fleetModel.CapacidadPeso) ||
+                    string.IsNullOrWhiteSpace(fleetModel.CapacidadVolumen))
+                {
+                    TempData["ErrorMessageCreateFleet"] = "Todos los campos obligatorios deben ser completados.";
+                    return View(fleetModel);
+                }
+
+                // No se permiten valores negativos al menos en la validación básica
+                if ((decimal.TryParse(fleetModel.Ancho.Replace(",", "."), out var ancho) && ancho < 0) ||
+                    (decimal.TryParse(fleetModel.Largo.Replace(",", "."), out var largo) && largo < 0) ||
+                    (decimal.TryParse(fleetModel.Alto.Replace(",", "."), out var alto) && alto < 0) ||
+                    (decimal.TryParse(fleetModel.CapacidadPeso.Replace(",", "."), out var peso) && peso < 0) ||
+                    (decimal.TryParse(fleetModel.CapacidadVolumen.Replace(",", "."), out var volumen) && volumen < 0))
+                {
+                    TempData["ErrorMessageCreateFleet"] = "No se permiten valores negativos.";
+                    return View(fleetModel);
+                }
+
                 // Validaciones básicas
-                if (string.IsNullOrEmpty(fleetModel.Patente) ||
-                    fleetModel.Ancho <= 0 ||
-                    fleetModel.Largo <= 0 ||
-                    fleetModel.Alto <= 0 ||
-                    fleetModel.CapacidadPeso <= 0 ||
-                    fleetModel.CapacidadVolumen <= 0 ||
-                    (fleetModel.Estado < 0 || fleetModel.Estado > 1))
+                if (fleetModel.Estado < 0 || fleetModel.Estado > 1)
                 {
                     TempData["ErrorMessageCreateFleet"] = "Todos los campos obligatorios deben ser completados correctamente";
                     return View(fleetModel);
                 }
-
                 // Verificar si la patente ya existe
 
                 var vehiculoDb = _fleetService.retornarFleetModelConPatente(fleetModel.Patente);
@@ -348,6 +366,8 @@ namespace VIPS.Web.Controllers
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
             var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
 
+            Console.WriteLine("entro 1");
+
             // Pasar al layout
             ViewBag.NombreUsuario = nombreUsuario;
             ViewBag.RolUsuario = rolUsuario;
@@ -360,13 +380,30 @@ namespace VIPS.Web.Controllers
                 return View(fleetmodel);
             }
 
+            // Validaciones básicas: que no estén vacíos ni negativos
+            if (string.IsNullOrWhiteSpace(fleetmodel.Ancho) ||
+                string.IsNullOrWhiteSpace(fleetmodel.Largo) ||
+                string.IsNullOrWhiteSpace(fleetmodel.Alto) ||
+                string.IsNullOrWhiteSpace(fleetmodel.CapacidadPeso) ||
+                string.IsNullOrWhiteSpace(fleetmodel.CapacidadVolumen))
+            {
+                TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados.";
+                return View(fleetmodel);
+            }
+
+            // No se permiten valores negativos al menos en la validación básica
+            if ((decimal.TryParse(fleetmodel.Ancho.Replace(",", "."), out var ancho) && ancho < 0) ||
+                (decimal.TryParse(fleetmodel.Largo.Replace(",", "."), out var largo) && largo < 0) ||
+                (decimal.TryParse(fleetmodel.Alto.Replace(",", "."), out var alto) && alto < 0) ||
+                (decimal.TryParse(fleetmodel.CapacidadPeso.Replace(",", "."), out var peso) && peso < 0) ||
+                (decimal.TryParse(fleetmodel.CapacidadVolumen.Replace(",", "."), out var volumen) && volumen < 0))
+            {
+                TempData["ErrorMessageEditFleet"] = "No se permiten valores negativos.";
+                return View(fleetmodel);
+            }
+
             // Validaciones básicas
-            if (fleetmodel.Ancho <= 0 ||
-                fleetmodel.Largo <= 0 ||
-                fleetmodel.Alto <= 0 ||
-                fleetmodel.CapacidadPeso <= 0 ||
-                fleetmodel.CapacidadVolumen <= 0 ||
-                (fleetmodel.Estado < 0 || fleetmodel.Estado > 1))
+            if (fleetmodel.Estado < 0 || fleetmodel.Estado > 1)
             {
                 TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados correctamente";
                 return View(fleetmodel);
@@ -376,31 +413,9 @@ namespace VIPS.Web.Controllers
 
             var fleetDb = _fleetService.retornarFleetModelConPatente(patente);
 
-            if (fleetDb != null)
+            if (fleetDb == null)
             {
-                TempData["ErrorMessageEditFleet"] = "Ya existe un vehiculo con esa patente.";
-
-                return View(fleetmodel);
-            }
-
-
-            var conflicto = _fleetService.ExisteConflicto(fleetmodel);
-
-            if (conflicto.Ancho || conflicto.Largo || conflicto.Alto ||
-                conflicto.CapacidadPeso || conflicto.CapacidadVolumen || conflicto.Estado)
-            {
-               if (conflicto.Ancho)
-                    TempData["ErrorMessageEditFleet"] = "El ancho ya está en uso por otro vehículo.";
-                else if (conflicto.Largo)
-                    TempData["ErrorMessageEditFleet"] = "El largo ya está en uso por otro vehículo.";
-                else if (conflicto.Alto)
-                    TempData["ErrorMessageEditFleet"] = "El alto ya está en uso por otro vehículo.";
-                else if (conflicto.CapacidadPeso)
-                    TempData["ErrorMessageEditFleet"] = "La capacidad de peso ya está en uso por otro vehículo.";
-                else if (conflicto.CapacidadVolumen)
-                    TempData["ErrorMessageEditFleet"] = "La capacidad de volumen ya está en uso por otro vehículo.";
-                else if (conflicto.Estado)
-                    TempData["ErrorMessageEditFleet"] = "El estado ya está en uso por otro vehículo.";
+                TempData["ErrorMessageEditFleet"] = "Seleccione un vehiculo valido.";
 
                 return View(fleetmodel);
             }
@@ -409,6 +424,8 @@ namespace VIPS.Web.Controllers
 
             if (!ModelState.IsValid)
             {
+                TempData["ErrorMessageEditFleet"] = "Ocurrio un error.";
+
                 return View(fleetmodel);
             }
 
@@ -416,7 +433,7 @@ namespace VIPS.Web.Controllers
 
             if (!resultado.Exito)
             {
-                TempData["ErrorMessageEditUser"] = resultado.Mensaje;
+                TempData["ErrorMessageEditFleet"] = resultado.Mensaje;
                 return View(fleetmodel);
             }
 
@@ -428,6 +445,30 @@ namespace VIPS.Web.Controllers
         }
 
 
+        public IActionResult ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc")
+        {
+            var pdfBytes = _orderService.ExportarPedidosPdf(columna, orden);
+
+            // Log de exportación
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar pedidos", "Exportación de tabla pedidos", ipAddress);
+
+            return File(pdfBytes, "application/pdf", "ReportePedidos.pdf");
+        }
+
+
+        public IActionResult ExportarFlotaPdf(string columna = "fechaCreacion", string orden = "desc")
+        {
+            var pdfBytes = _fleetService.ExportarFlotaPdf(columna, orden);
+
+            // Agregar log de exportación (opcional)
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar flota", "Exportación de tabla flota", ipAddress);
+
+                return File(pdfBytes, "application/pdf", "ReporteFlota.pdf");
+        }
 
 
     }

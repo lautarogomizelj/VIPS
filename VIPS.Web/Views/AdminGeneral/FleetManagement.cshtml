@@ -1,5 +1,98 @@
-﻿@{
+﻿@model List<VIPS.Web.Models.FleetViewModel>
+
+    @{
     Layout = "_AdminLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
-}
+    }
 
+    <div class="filtrosContenedor">
+
+        <form method="get" asp-controller="AdminGeneral" asp-action="FleetManagement" class="FILTER" style="width:335px">
+
+            <div class="contenedor-info">
+                <label for="columna"><h4>@(lang == "es" ? "Columna:" : "Column:")</h4></label>
+
+                <select id="columna" name="columna">
+                    <option value="idCamion" selected="@(ViewBag.Columna == "idCamion" ? "selected" : null)">
+                        @(lang == "es" ? "ID Camión" : "Truck ID")
+                    </option>
+                    <option value="patente" selected="@(ViewBag.Columna == "catente" ? "selected" : null)">
+                        @(lang == "es" ? "Patente" : "License Plate")
+                    </option>
+                    <option value="capacidadPeso" selected="@(ViewBag.Columna == "capacidadPeso" ? "selected" : null)">
+                        @(lang == "es" ? "Capacidad Peso (kg)" : "Weight Capacity (kg)")
+                    </option>
+                    <option value="capacidadVolumen" selected="@(ViewBag.Columna == "capacidadVolumen" ? "selected" : null)">
+                        @(lang == "es" ? "Capacidad Volumen (m3)" : "Volume Capacity (m3)")
+                    </option>
+                    <option value="fechaCreacion" selected="@(ViewBag.Columna == "fechaCreacion" ? "selected" : null)">
+                        @(lang == "es" ? "Fecha Creación" : "Creation Date")
+                    </option>
+                    <option value="estado" selected="@(ViewBag.Columna == "estado" ? "selected" : null)">
+                        @(lang == "es" ? "Estado" : "Status")
+                    </option>
+                </select>
+
+                <label for="orden"><h4>@(lang == "es" ? "Orden:" : "Order:")</h4></label>
+                <select id="orden" name="orden">
+                    <option value="asc" selected="@(ViewBag.Orden == "asc" ? "selected" : null)">
+                        @(lang == "es" ? "Ascendente" : "Ascending")
+                    </option>
+                    <option value="desc" selected="@(ViewBag.Orden == "desc" ? "selected" : null)">
+                        @(lang == "es" ? "Descendente" : "Descending")
+                    </option>
+                </select>
+            </div>
+
+            <button class="btn-principal filtros" type="submit">
+                @(lang == "es" ? "Aplicar filtros" : "Apply Filters")
+            </button>
+
+        </form>
+
+        <a asp-controller="AdminGeneral" asp-action="ExportarFlotaPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" class="btn-principal filtros">
+            @(lang == "es" ? "Exportar a PDF" : "Export to PDF")
+        </a>
+    </div>
+
+    <table>
+        <tr>
+            <th>@(lang == "es" ? "ID Camión" : "Truck ID")</th>
+            <th>@(lang == "es" ? "Patente" : "License Plate")</th>
+            <th>@(lang == "es" ? "Capacidad Peso (kg)" : "Weight Capacity (kg)")</th>
+            <th>@(lang == "es" ? "Capacidad Volumen (m3)" : "Volume Capacity (m3)")</th>
+            <th>@(lang == "es" ? "Fecha Creación" : "Creation Date")</th>
+            <th>@(lang == "es" ? "Estado" : "Status")</th>
+            <th>@(lang == "es" ? "Acciones" : "Actions")</th>
+        </tr>
+
+        @foreach (var camion in Model)
+    {
+        <tr>
+            <td>@camion.IdCamion</td>
+            <td>@camion.Patente</td>
+            <td>@camion.CapacidadPeso</td>
+            <td>@camion.CapacidadVolumen</td>
+            <td>@camion.FechaCreacion.ToString("dd/MM/yyyy")</td>
+            <td>@(camion.Estado == 1 ? (lang == "es" ? "Activo" : "Active") : (lang == "es" ? "Inactivo" : "Inactive"))</td>
+            <td class="svg-container flex">
+
+                <a asp-controller="AdminLogistico" asp-action="EditFleet" asp-route-patente="@camion.Patente">
+                    <svg class="edit-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21.2799 6.40005L11.7399 15.94C10.7899 16.89 7.96987 17.33 7.33987 16.7C6.70987 16.07 7.13987 13.25 8.08987 12.3L17.6399 2.75002C17.8754 2.49308 18.1605 2.28654 18.4781 2.14284C18.7956 1.99914 19.139 1.92124 19.4875 1.9139C19.8359 1.90657 20.1823 1.96991 20.5056 2.10012C20.8289 2.23033 21.1225 2.42473 21.3686 2.67153C21.6147 2.91833 21.8083 3.21243 21.9376 3.53609C22.0669 3.85976 22.1294 4.20626 22.1211 4.55471C22.1128 4.90316 22.0339 5.24635 21.8894 5.5635C21.7448 5.88065 21.5375 6.16524 21.2799 6.40005V6.40005Z"
+                              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M11 4H6C4.93913 4 3.92178 4.42142 3.17163 5.17157C2.42149 5.92172 2 6.93913 2 8V18C2 19.0609 2.42149 20.0783 3.17163 20.8284C3.92178 21.5786 4.93913 22 6 22H17C19.21 22 20 20.2 20 18V13"
+                              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </a>
+
+                <a asp-controller="AdminLogistico" asp-action="DeleteFleet" asp-route-patente="@camion.Patente">
+                    <svg class="cross-icon" viewBox="0 -0.5 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6.96967 16.4697C6.67678 16.7626 6.67678 17.2374 6.96967 17.5303C7.26256 17.8232 7.73744 17.8232 8.03033 17.5303L6.96967 16.4697ZM13.0303 12.5303C13.3232 12.2374 13.3232 11.7626 13.0303 11.4697C12.7374 11.1768 12.2626 11.1768 11.9697 11.4697L13.0303 12.5303ZM11.9697 11.4697C11.6768 11.7626 11.6768 12.2374 11.9697 12.5303C12.2626 12.8232 12.7374 12.8232 13.0303 12.5303L11.9697 11.4697ZM18.0303 7.53033C18.3232 7.23744 18.3232 6.76256 18.0303 6.46967C17.7374 6.17678 17.2626 6.17678 16.9697 6.46967L18.0303 7.53033ZM13.0303 11.4697C12.7374 11.1768 12.2626 11.1768 11.9697 11.4697C11.6768 11.7626 11.6768 12.2374 11.9697 12.5303L13.0303 11.4697ZM16.9697 17.5303C17.2626 17.8232 17.7374 17.8232 18.0303 17.5303C18.3232 17.2374 18.3232 16.7626 18.0303 16.4697L16.9697 17.5303ZM11.9697 12.5303C12.2626 12.8232 12.7374 12.8232 13.0303 12.5303C13.3232 12.2374 13.3232 11.7626 13.0303 11.4697L11.9697 12.5303ZM8.03033 6.46967C7.73744 6.17678 7.26256 6.17678 6.96967 6.46967C6.67678 6.76256 6.67678 7.23744 6.96967 7.53033L8.03033 6.46967ZM8.03033 17.5303L13.0303 12.5303L11.9697 11.4697L6.96967 16.4697L8.03033 17.5303ZM13.0303 12.5303L18.0303 7.53033L16.9697 6.46967L11.9697 11.4697L13.0303 12.5303ZM11.9697 12.5303L16.9697 17.5303L18.0303 16.4697L13.0303 11.4697L11.9697 12.5303ZM13.0303 11.4697L8.03033 6.46967L6.96967 7.53033L11.9697 12.5303L13.0303 11.4697Z" />
+                    </svg>
+                </a>
+
+            </td>
+        </tr>
+    }
+    </table>

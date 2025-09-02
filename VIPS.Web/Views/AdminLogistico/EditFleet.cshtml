@@ -1,7 +1,7 @@
 @model VIPS.Web.Models.FleetModel
 
 @{
-    Layout = "_AdminVentasLayout";
+    Layout = "_AdminLogisticoLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
@@ -29,47 +29,66 @@
 
     <!-- Dimensiones -->
 
+    <p>Los valores decimales tienen que ir con coma. No hace falta poner punto para representar mil.</p>
 
     <div class="row">
         <label for="Ancho">@((lang == "es") ? "Ancho (m) *" : "Width (m)  *")</label>
-        <input type="number" id="Nombre" name="Ancho" required value="@Model.Ancho">
+        <input type="text" id="Nombre" name="Ancho" required value="@Model.Ancho.Replace(".", "")">
     </div>
 
     <div class="row">
         <label for="Largo">@((lang == "es") ? "Largo (m) *" : "Long (m)*")</label>
-        <input type="number" id="Largo" name="Largo" required value="@Model.Largo">
+        <input type="text" id="Largo" name="Largo" required value="@Model.Largo.Replace(".", "")">
     </div>
 
     <div class="row">
         <label for="Alto">@((lang == "es") ? "Alto (m) *" : "Height (m) *")</label>
-        <input type="number" id="Alto" name="Alto" required value="@Model.Alto">
+        <input type="text" id="Alto" name="Alto" required value="@Model.Alto.Replace(".", "")">
     </div>
 
     <!-- Capaicdad de carga max -->
 
     <div class="row">
         <label for="CapacidadPeso">@((lang == "es") ? "CapacidadPeso (kg) *" : "Max weight (kg)*")</label>
-        <input type="number" id="CapacidadPeso" name="CapacidadPeso" required value="@Model.CapacidadPeso">
+        <input type="text" id="CapacidadPeso" name="CapacidadPeso" required value="@Model.CapacidadPeso.Replace(".", "")">
     </div>
 
     <div class="row">
         <label for="CapacidadVolumen">@((lang == "es") ? "CapacidadVolumen (m3) *" : "Max volume (m3) *")</label>
-        <input type="number" id="CapacidadVolumen" name="CapacidadVolumen" required value="@Model.CapacidadVolumen">
+        <input type="text" id="CapacidadVolumen" name="CapacidadVolumen" required value="@Model.CapacidadVolumen.Replace(".", "")">
     </div>
 
 
     <!--Estado (inactivo o activo)-->
 
     <div class="row">
-        <label for="Estado">@((lang == "es") ? "Inidique el estado (activo/inactivo) *" : "Select vehicle state (active/inactive) *")</label>
+        <label for="Estado">
+            @((lang == "es") ? "Indique el estado (activo/inactivo) *" : "Select vehicle state (active/inactive) *")
+        </label>
 
-        <select name="Estado">
-            <option value="">@(lang == "es" ? "Indique el estado" : "Select vehicle state")</option>
+        <select name="Estado" id="Estado">
+            <option value="">
+                @(lang == "es" ? "Indique el estado" : "Select vehicle state")
+            </option>
+
+            @if (Model.Estado == 0)
+        {
+            <option value="0" selected>@(lang == "es" ? "Inactivo" : "Inactive")</option>
+            <option value="1">@(lang == "es" ? "Activo" : "Active")</option>
+        }
+        else if (Model.Estado == 1)
+        {
+            <option value="0">@(lang == "es" ? "Inactivo" : "Inactive")</option>
+            <option value="1" selected>@(lang == "es" ? "Activo" : "Active")</option>
+        }
+        else
+        {
             <option value="0">@(lang == "es" ? "Inactivo" : "Inactive")</option>
             <option value="1">@(lang == "es" ? "Activo" : "Active")</option>
-
+        }
         </select>
     </div>
+
 
     <button type="submit" class="btn-principal">@(lang == "es" ? "Guardar Cambios" : "Save Changes")</button>
     <a class="restablecer" asp-controller="AdminLogistico" asp-action="FleetManagement">@((lang == "es") ? "Cancelar" : "Cancel")</a>

@@ -11,8 +11,7 @@ using System.Reflection.Metadata;
 using PdfSharpCore.Pdf;
 using PdfSharpCore.Drawing;
 using System.IO;
-
-
+using PdfSharpCore.Drawing.Layout; // <- necesario para XTextFormatter
 
 namespace VIPS.Web.Controllers
 {
@@ -23,14 +22,22 @@ namespace VIPS.Web.Controllers
         private readonly IHashService _hashService;
         private readonly LogService _logService;
         private readonly UserService _userService;
+        private readonly FleetService _fleetService;
+        private readonly OrderService _orderService;
 
 
-        public AdminGeneralController(IConfiguration configuration, IHashService hashService, LogService logService, UserService userService)
+
+
+        public AdminGeneralController(IConfiguration configuration, IHashService hashService, LogService logService, UserService userService, FleetService fleetService, OrderService orderService)
         {
             _configuration = configuration;
             _hashService = hashService;
             _userService = userService;
             _logService = logService;
+            _fleetService = fleetService;
+            _orderService = orderService;
+
+
         }
 
         public IActionResult Index()
@@ -183,30 +190,53 @@ namespace VIPS.Web.Controllers
             }
         }
 
-        public IActionResult OrderManagement()
+        [HttpGet]
+        public IActionResult OrderManagement(string columna = "fechaCreacion", string orden = "desc")
         {
+            try
+            {
+                // Leer claims desde la cookie
+                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
 
-            // Leer claims desde la cookie
-            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
-            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+                // Pasar al layout
+                ViewBag.NombreUsuario = nombreUsuario;
+                ViewBag.RolUsuario = rolUsuario;
 
-            // Pasar al layout
-            ViewBag.NombreUsuario = nombreUsuario;
-            ViewBag.RolUsuario = rolUsuario;
-            return View();
+                var pedidos = _orderService.ObtenerPedidos(columna, orden);
+
+                return View(pedidos);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Error al cargar los pedidos";
+                return View(new List<OrderViewModel>());
+            }
         }
 
-        public IActionResult FleetManagement()
+        [HttpGet]
+        public IActionResult FleetManagement(string columna = "fechaCreacion", string orden = "desc")
         {
+            try
+            {
+                // Leer claims desde la cookie
+                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
 
-            // Leer claims desde la cookie
-            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
-            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+                // Pasar al layout
+                ViewBag.NombreUsuario = nombreUsuario;
+                ViewBag.RolUsuario = rolUsuario;
 
-            // Pasar al layout
-            ViewBag.NombreUsuario = nombreUsuario;
-            ViewBag.RolUsuario = rolUsuario;
-            return View();
+                var flota = _fleetService.ObtenerFlota(columna, orden);
+
+                return View(flota);
+
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Error al cargar los camiones";
+                return View(new List<FleetViewModel>());
+            }
         }
 
         [HttpGet]
@@ -420,6 +450,31 @@ namespace VIPS.Web.Controllers
 
                 return File(ms.ToArray(), "application/pdf", "ReporteLogs.pdf");
             }
+        }
+
+        public IActionResult ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc")
+        {
+            var pdfBytes = _orderService.ExportarPedidosPdf(columna, orden);
+
+            // Log de exportación
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar pedidos", "Exportación de tabla pedidos", ipAddress);
+
+            return File(pdfBytes, "application/pdf", "ReportePedidos.pdf");
+        }
+
+
+        public IActionResult ExportarFlotaPdf(string columna = "fechaCreacion", string orden = "desc")
+        {
+            var pdfBytes = _fleetService.ExportarFlotaPdf(columna, orden);
+
+            // Agregar log de exportación (opcional)
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar flota", "Exportación de tabla flota", ipAddress);
+
+            return File(pdfBytes, "application/pdf", "ReporteFlota.pdf");
         }
 
 

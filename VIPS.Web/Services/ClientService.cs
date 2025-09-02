@@ -1,9 +1,16 @@
+using System;
 using System.Data;
 using System.Text;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.ObjectPool;
 using VIPS.Web.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Collections.Generic;         // Para List<T>
+using System.Globalization;               // Para CultureInfo
+using System.IO;                          // Para MemoryStream (si usás PDFs)
+using System.Linq;                         // Para .Contains y otras operaciones LINQ
+using PdfSharpCore.Pdf;       // Para PdfDocument
+using PdfSharpCore.Drawing;   // Para XGraphics, XFont, XRect, XBrushes, XStringFormats
 
 namespace VIPS.Web.Services
 {
@@ -216,7 +223,7 @@ namespace VIPS.Web.Services
 
                 conn.Open();
 
-                string query = @"UPDATE Cliente SET eliminado = 1 WHERE idCliente= @idCliente";
+                string query = @"UPDATE Cliente SET eliminado = 1, fechaModificacion = GETDATE() WHERE idCliente= @idCliente";
 
                 using var cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@idCliente", idCliente);
@@ -318,7 +325,8 @@ namespace VIPS.Web.Services
                 apellido = @apellido,
                 email = @correo,
                 telefono = @telefono,
-                domicilioLegal = @domicilioLegal
+                domicilioLegal = @domicilioLegal,
+            fechaModificacion = GETDATE()
             WHERE idCliente = @idCliente and eliminado = 0";
 
                 using var command = new SqlCommand(query, connection);
@@ -353,5 +361,47 @@ namespace VIPS.Web.Services
             return resultado;
         }
 
+
+
+        public byte[] ExportarClientesPdf(string columna = "fechaCreacion", string orden = "desc")
+        {
+            var clientes = ObtenerClientes(columna, orden);
+
+            using var ms = new MemoryStream();
+            PdfDocument document = new PdfDocument();
+            var page = document.AddPage();
+            XGraphics gfx = XGraphics.FromPdfPage(page);
+            XFont font = new XFont("Verdana", 10, XFontStyle.Regular);
+
+            double startX = 40;
+            double startY = 50;
+            double rowHeight = 20;
+
+            // Encabezados
+            gfx.DrawString("ID Cliente", font, XBrushes.Black, new XRect(startX, startY, 60, rowHeight), XStringFormats.Center);
+            gfx.DrawString("Nombre", font, XBrushes.Black, new XRect(startX + 60, startY, 100, rowHeight), XStringFormats.Center);
+            gfx.DrawString("Apellido", font, XBrushes.Black, new XRect(startX + 160, startY, 100, rowHeight), XStringFormats.Center);
+            gfx.DrawString("Domicilio Legal", font, XBrushes.Black, new XRect(startX + 260, startY, 180, rowHeight), XStringFormats.Center);
+            gfx.DrawString("Fecha Creacion", font, XBrushes.Black, new XRect(startX + 440, startY, 100, rowHeight), XStringFormats.Center);
+
+            // Línea encabezado
+            gfx.DrawLine(XPens.Black, startX, startY + rowHeight, startX + 540, startY + rowHeight);
+
+            double y = startY + rowHeight;
+            foreach (var cliente in clientes)
+            {
+                y += rowHeight;
+                gfx.DrawString(cliente.IdCliente.ToString(), font, XBrushes.Black, new XRect(startX, y, 60, rowHeight), XStringFormats.Center);
+                gfx.DrawString(cliente.Nombre, font, XBrushes.Black, new XRect(startX + 60, y, 100, rowHeight), XStringFormats.Center);
+                gfx.DrawString(cliente.Apellido, font, XBrushes.Black, new XRect(startX + 160, y, 100, rowHeight), XStringFormats.Center);
+                gfx.DrawString(cliente.DomicilioLegal, font, XBrushes.Black, new XRect(startX + 260, y, 180, rowHeight), XStringFormats.Center);
+                gfx.DrawString(cliente.FechaCreacion.ToString("dd/MM/yyyy"), font, XBrushes.Black, new XRect(startX + 440, y, 100, rowHeight), XStringFormats.Center);
+
+                gfx.DrawLine(XPens.Gray, startX, y + rowHeight, startX + 540, y + rowHeight);
+            }
+
+            document.Save(ms, false);
+            return ms.ToArray();
+        }
     }
 }

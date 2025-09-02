@@ -4,8 +4,8 @@ namespace VIPS.Web.Models
     {
         public int      IdCamion                { get; set; }
         public string   Patente                 { get; set; }
-        public decimal  CapacidadPeso           { get; set; }
-        public decimal  CapacidadVolumen        { get; set; }
+        public string   CapacidadPeso           { get; set; }
+        public string   CapacidadVolumen        { get; set; }
         public DateTime FechaCreacion  { get; set; }
         public int   Estado                  { get; set; }
     }

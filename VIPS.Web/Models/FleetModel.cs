@@ -3,11 +3,11 @@ namespace VIPS.Web.Models
     public class FleetModel
     {
         public string   Patente                 { get; set; }
-        public decimal  Ancho                   { get; set; }
-        public decimal  Largo                   { get; set; }
-        public decimal  Alto                    { get; set; }
-        public decimal  CapacidadPeso           { get; set; }
-        public decimal  CapacidadVolumen        { get; set; }
+        public string   Ancho                   { get; set; }
+        public string   Largo                   { get; set; }
+        public string   Alto                    { get; set; }
+        public string   CapacidadPeso           { get; set; }
+        public string   CapacidadVolumen        { get; set; }
         public int      Estado                  { get; set; }
     }
 }

@@ -377,6 +377,112 @@ namespace VIPS.Web.Controllers
             return View();
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateOrder(OrderModel model)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            ViewBag.Clientes = _clientService.ObtenerListaNombreyDni();
+
+
+            // Geocodificar dirección
+            var (lat, lon, postalCode) = await _orderService.GeocodeAsync(model.DomicilioEntrega);
+
+            Console.WriteLine("Cliente: " + model.IdCliente);
+            Console.WriteLine("Ancho: " + model.Ancho);
+            Console.WriteLine("Largo: " + model.Largo);
+            Console.WriteLine("Alto: " + model.Alto);
+            Console.WriteLine("Peso: " + model.Peso);
+            Console.WriteLine("DomicilioEntrega: " + model.DomicilioEntrega);
+
+            Console.WriteLine("Latitud: " + lat);
+            Console.WriteLine("Longitud: " + lon);
+            Console.WriteLine("CP: " + postalCode);
+
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessageCreateFleet"] = "Ocurrio un error.";
+
+                    return View(fleetModel);
+                }
+
+                // Validaciones básicas: que no estén vacíos ni negativos
+                if (string.IsNullOrWhiteSpace(fleetModel.Ancho) ||
+                    string.IsNullOrWhiteSpace(fleetModel.Largo) ||
+                    string.IsNullOrWhiteSpace(fleetModel.Alto) ||
+                    string.IsNullOrWhiteSpace(fleetModel.Peso))
+                {
+                    TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados.";
+                    return View(fleetModel);
+                }
+
+                // No se permiten valores negativos al menos en la validación básica
+                if ((decimal.TryParse(fleetModel.Ancho.Replace(",", "."), out var ancho) && ancho < 0) ||
+                    (decimal.TryParse(fleetModel.Largo.Replace(",", "."), out var largo) && largo < 0) ||
+                    (decimal.TryParse(fleetModel.Alto.Replace(",", "."), out var alto) && alto < 0) ||
+                    (decimal.TryParse(fleetModel.CapacidadPeso.Replace(",", "."), out var peso) && peso < 0) ||
+                    (decimal.TryParse(fleetModel.CapacidadVolumen.Replace(",", "."), out var volumen) && volumen < 0))
+                {
+                    TempData["ErrorMessageEditFleet"] = "No se permiten valores negativos.";
+                    return View(fleetModel);
+                }
+
+                // Validaciones básicas
+                if (fleetModel.Estado < 0 || fleetModel.Estado > 1)
+                {
+                    TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados correctamente";
+                    return View(fleetModel);
+                }
+                // Verificar si la patente ya existe
+
+                var vehiculoDb = _fleetService.retornarFleetModelConPatente(fleetModel.Patente);
+                if (vehiculoDb != null)
+                {
+                    TempData["ErrorMessageCreateFleet"] = "Patente ya ingresada, ingrese devuelta..";
+
+                    return View(fleetModel);
+                }
+
+
+                var resultado = _fleetService.CrearFleet(fleetModel);
+
+
+                if (!resultado.Exito)
+                {
+                    // Mostrar error en la misma vista
+                    TempData["ErrorMessageCreateClient"] = resultado.Mensaje;
+
+                    return View(fleetModel);
+                }
+
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Crear vehiculo", "Se creo el vehiculo con patenete: " + fleetModel.Patente, ipAddress);
+
+                TempData["MensajeExitoFormularioCrearVehiculo"] = resultado.Mensaje;
+                return View();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessageCreateFleet"] = $"Error interno del servidor: {ex.Message}";
+                return View(fleetModel);
+            }
+
+
+
+
+
+            return View();
+        }
+
 
         [HttpGet("DeleteOrder/{idPedido}")]
         public IActionResult DeleteOrder(int idPedido, OrderModel model)
@@ -389,6 +495,12 @@ namespace VIPS.Web.Controllers
             ViewBag.NombreUsuario = nombreUsuario;
             ViewBag.RolUsuario = rolUsuario;
             ViewBag.idPedido = idPedido;
+
+
+
+
+
+
 
             /*try
             {
@@ -543,6 +655,28 @@ namespace VIPS.Web.Controllers
             _logService.AgregarLog(username, DateTime.Now, "Cambio idioma", "Cambio de idioma a: " + nuevoLang, ipAddress);
 
             return RedirectToAction("MyAccount");
+        }
+
+
+        public IActionResult ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc")
+        {
+            var pdfBytes = _orderService.ExportarPedidosPdf(columna, orden);
+
+            // Log de exportación
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar pedidos", "Exportación de tabla pedidos", ipAddress);
+
+            return File(pdfBytes, "application/pdf", "ReportePedidos.pdf");
+        }
+
+
+        public IActionResult ExportarClientesPdf(string columna = "fechaCreacion", string orden = "desc")
+        {
+            var pdfBytes = _clientService.ExportarClientesPdf(columna, orden);
+
+            var nombreArchivo = "ReporteClientes.pdf";
+            return File(pdfBytes, "application/pdf", nombreArchivo);
         }
     }
 }
