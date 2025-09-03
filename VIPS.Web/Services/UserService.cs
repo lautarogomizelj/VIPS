@@ -99,7 +99,7 @@ namespace VIPS.Web.Services
             }
         }
 
-        public List<UsuarioViewModel> ObtenerUsuarios(string columna, string orden)
+        public List<UsuarioViewModel> ObtenerUsuarios(string columna, string orden, string? parametro = null)
         {
             try
             {
@@ -110,12 +110,29 @@ namespace VIPS.Web.Services
                 // Orden seguro
                 var ordenSeguro = (orden?.ToUpper() == "DESC") ? "DESC" : "ASC";
 
-                var query = $@"select u.usuario, r.nombre, u.fechaCreacion, u.fechaUltimoLogin, u.fechaUltimoIntentoFallido from Usuario u inner join Rol r on r.idRol = u.idRol WHERE eliminado = 0 order by {columna} {ordenSeguro}";
+                var query = $@"select u.usuario, r.nombre, u.fechaCreacion, u.fechaUltimoLogin, u.fechaUltimoIntentoFallido from Usuario u inner join Rol r on r.idRol = u.idRol WHERE eliminado = 0";
+
+                if (!string.IsNullOrEmpty(parametro))
+                {
+                    query += $@" AND u.usuario LIKE @parametro order by {columna} {ordenSeguro}";
+                }
+                else
+                {
+                    query += $" order by {columna} {ordenSeguro}";
+
+                }
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 connection.Open();
 
                 using var cmd = new SqlCommand(query, connection);
+
+                if (!string.IsNullOrEmpty(parametro))
+                {
+                    // Búsqueda parcial
+                    cmd.Parameters.AddWithValue("@parametro", "%" + parametro + "%");
+                }
+
                 using var adapter = new SqlDataAdapter(cmd);
 
                 var dataTable = new DataTable();

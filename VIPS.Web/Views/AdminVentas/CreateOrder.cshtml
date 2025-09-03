@@ -29,9 +29,9 @@
     <!--aca va la parte del dni existente-->
 
     <div class="row">
-        <label for="Cliente">@((lang == "es") ? "Cliente *" : "Client *")</label>
+        <label for="idCliente">@((lang == "es") ? "Cliente *" : "Client *")</label>
 
-        <select id="Cliente" name="IdCliente" asp-items="ViewBag.Clientes" required>
+        <select id="idCliente" name="idCliente" asp-items="ViewBag.Clientes" required>
             <option value="">@(lang == "es" ? "Seleccione un cliente" : "Select a client")</option>
         </select>
 
@@ -43,23 +43,23 @@
     <!-- Dimensiones -->
 
     <div class="row">
-        <label for="Ancho">@((lang == "es") ? "Ancho (m) *" : "Width (m)  *")</label>
-        <input type="number" id="Nombre" name="Ancho" required>
+        <label for="Ancho">@((lang == "es") ? "Ancho (cm) *" : "Width (cm)  *")</label>
+        <input type="text" id="Nombre" name="Ancho" required>
     </div>
 
     <div class="row">
-        <label for="Largo">@((lang == "es") ? "Largo (m) *" : "Long (m)*")</label>
-        <input type="number" id="Largo" name="Largo" required>
+        <label for="Largo">@((lang == "es") ? "Largo (cm) *" : "Long (cm)*")</label>
+        <input type="text" id="Largo" name="Largo" required>
     </div>
 
     <div class="row">
-        <label for="Alto">@((lang == "es") ? "Alto (m) *" : "Height (m) *")</label>
-        <input type="number" id="Alto" name="Alto" required>
+        <label for="Alto">@((lang == "es") ? "Alto (cm) *" : "Height (cm) *")</label>
+        <input type="text" id="Alto" name="Alto" required>
     </div>
 
     <div class="row">
-        <label for="Peso">@((lang == "es") ? "Peso (kg) *" : "Weight (kg) *")</label>
-        <input type="number" id="Peso" name="Peso" required>
+        <label for="Peso">@((lang == "es") ? "Peso (gr) *" : "Weight (gr) *")</label>
+        <input type="text" id="Peso" name="Peso" required>
     </div>
 
 
@@ -69,17 +69,17 @@
 
     <div class="row">
         <label for="DomicilioEntrega">@((lang == "es") ? "Domicilio de entrega *" : "Order address *")</label>
-        <input type="text" id="DomicilioEntrega" name="DomicilioEntrega" required placeholder="Ej: Luis Maria Campos 1149, Buenos Aires">
+        <input type="text" id="DomicilioEntrega" name="DomicilioEntrega" required placeholder="Ej: Luis Maria Campos 1149">
     </div>
 
     <div class="row">
-        <label for="DomicilioEntrega">@((lang == "es") ? "Domicilio de entrega *" : "Order address *")</label>
-        <input type="text" id="DomicilioEntrega" name="DomicilioEntrega" required placeholder="Ej: Luis Maria Campos 1149, Buenos Aires">
+        <label for="Ciudad">@((lang == "es") ? "Ciudad *" : "City *")</label>
+        <input type="text" id="Ciudad" name="Ciudad" required>
     </div>
 
     <div class="row">
-        <label for="DomicilioEntrega">@((lang == "es") ? "Domicilio de entrega *" : "Order address *")</label>
-        <input type="text" id="DomicilioEntrega" name="DomicilioEntrega" required placeholder="Ej: Luis Maria Campos 1149, Buenos Aires">
+        <label for="Provincia">@((lang == "es") ? "Provincia *" : "State *")</label>
+        <input type="text" id="Provincia" name="Provincia" required>
     </div>
 
 

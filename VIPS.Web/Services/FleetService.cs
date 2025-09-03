@@ -25,7 +25,7 @@ namespace VIPS.Web.Services
             _configuration = configuration;
         }
 
-        public List<FleetViewModel> ObtenerFlota(string columna, string orden)
+        public List<FleetViewModel> ObtenerFlota(string columna, string orden, string? patente = null)
         {
             try
             {
@@ -36,12 +36,29 @@ namespace VIPS.Web.Services
                 // Orden seguro
                 var ordenSeguro = (orden?.ToUpper() == "DESC") ? "DESC" : "ASC";
 
-                var query = $@"select idCamion, patente, capacidadPeso, capacidadVolumen, fechaCreacion, estado from Flota where eliminado = 0 order by {columna} {ordenSeguro}";
+                var query = $@"select idCamion, patente, capacidadPeso, capacidadVolumen, fechaCreacion, estado from Flota where eliminado = 0";
+
+                if (!string.IsNullOrEmpty(patente))
+                {
+                    query += $@" AND patente LIKE @patente order by {columna} {ordenSeguro}";
+                }
+                else
+                {
+                    query += $" order by {columna} {ordenSeguro}";
+
+                }
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 connection.Open();
 
                 using var cmd = new SqlCommand(query, connection);
+
+                if (!string.IsNullOrEmpty(patente))
+                {
+                    // Búsqueda parcial
+                    cmd.Parameters.AddWithValue("@patente", "%" + patente + "%");
+                }
+
                 using var adapter = new SqlDataAdapter(cmd);
 
                 var dataTable = new DataTable();
@@ -324,10 +341,10 @@ namespace VIPS.Web.Services
         }
 
 
-        public byte[] ExportarFlotaPdf(string columna = "fechaCreacion", string orden = "desc")
+        public byte[] ExportarFlotaPdf(string columna = "fechaCreacion", string orden = "desc", string? parametro = null)
         {
             // Traer la flota ordenada
-            var flota = ObtenerFlota(columna, orden);
+            var flota = ObtenerFlota(columna, orden, parametro);
 
             using (var ms = new MemoryStream())
             {

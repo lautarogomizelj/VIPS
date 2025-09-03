@@ -11,6 +11,7 @@ using System.Reflection.Metadata;
 using PdfSharpCore.Pdf;
 using PdfSharpCore.Drawing;
 using System.IO;
+using Microsoft.AspNetCore.Http.Features;
 
 
 namespace VIPS.Web.Controllers
@@ -51,7 +52,7 @@ namespace VIPS.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult ClientManagement(string columna = "fechaCreacion", string orden = "desc")
+        public IActionResult ClientManagement(string columna = "fechaCreacion", string orden = "desc", string? nombreCliente = null)
         {
             try
             {
@@ -62,11 +63,12 @@ namespace VIPS.Web.Controllers
                 // Pasar al layout
                 ViewBag.NombreUsuario = nombreUsuario;
                 ViewBag.RolUsuario = rolUsuario;
+                ViewBag.nombreCliente = nombreCliente;
 
                 ViewBag.Columna = columna;
                 ViewBag.Orden = orden;
 
-                var clientes = _clientService.ObtenerClientes(columna, orden);
+                var clientes = _clientService.ObtenerClientes(columna, orden, nombreCliente);
 
                 return View(clientes);
             }
@@ -80,7 +82,7 @@ namespace VIPS.Web.Controllers
 
 
         [HttpGet]
-        public IActionResult OrderManagement(string columna = "fechaCreacion", string orden = "desc")
+        public IActionResult OrderManagement(string columna = "fechaCreacion", string orden = "desc", string? nombreCliente = null)
         {
             try
             {
@@ -91,13 +93,15 @@ namespace VIPS.Web.Controllers
                 // Pasar al layout
                 ViewBag.NombreUsuario = nombreUsuario;
                 ViewBag.RolUsuario = rolUsuario;
+                ViewBag.nombreCliente = nombreCliente;
 
-                var pedidos = _orderService.ObtenerPedidos(columna, orden);
+                var pedidos = _orderService.ObtenerPedidos(columna, orden, nombreCliente);
 
                 return View(pedidos);
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 ViewBag.Error = "Error al cargar los pedidos";
                 return View(new List<OrderViewModel>());
             }
@@ -371,7 +375,7 @@ namespace VIPS.Web.Controllers
             ViewBag.RolUsuario = rolUsuario;
 
             //Pasar todos los dni de clientes
-            ViewBag.Clientes = _clientService.ObtenerListaNombreyDni();
+            ViewBag.Clientes = _clientService.ObtenerListaNombreyIdCliente();
 
 
             return View();
@@ -389,91 +393,66 @@ namespace VIPS.Web.Controllers
             ViewBag.NombreUsuario = nombreUsuario;
             ViewBag.RolUsuario = rolUsuario;
 
-            ViewBag.Clientes = _clientService.ObtenerListaNombreyDni();
+            ViewBag.Clientes = _clientService.ObtenerListaNombreyIdCliente();
 
 
-            // Geocodificar dirección
-            var (lat, lon, postalCode) = await _orderService.GeocodeAsync(model.DomicilioEntrega);
-
-            Console.WriteLine("Cliente: " + model.IdCliente);
-            Console.WriteLine("Ancho: " + model.Ancho);
-            Console.WriteLine("Largo: " + model.Largo);
-            Console.WriteLine("Alto: " + model.Alto);
-            Console.WriteLine("Peso: " + model.Peso);
-            Console.WriteLine("DomicilioEntrega: " + model.DomicilioEntrega);
-
-            Console.WriteLine("Latitud: " + lat);
-            Console.WriteLine("Longitud: " + lon);
-            Console.WriteLine("CP: " + postalCode);
-
+           
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    TempData["ErrorMessageCreateFleet"] = "Ocurrio un error.";
+                    TempData["ErrorMessageCreateOrder"] = "Ocurrio un error.";
 
-                    return View(fleetModel);
+                    return View(model);
                 }
 
-                // Validaciones básicas: que no estén vacíos ni negativos
-                if (string.IsNullOrWhiteSpace(fleetModel.Ancho) ||
-                    string.IsNullOrWhiteSpace(fleetModel.Largo) ||
-                    string.IsNullOrWhiteSpace(fleetModel.Alto) ||
-                    string.IsNullOrWhiteSpace(fleetModel.Peso))
+                // Validaciones básicas: que no estén vacíos
+                if (string.IsNullOrWhiteSpace(model.Ancho) ||
+                    string.IsNullOrWhiteSpace(model.Largo) ||
+                    string.IsNullOrWhiteSpace(model.Alto)  ||
+                    string.IsNullOrWhiteSpace(model.Peso)  ||
+                    string.IsNullOrWhiteSpace(model.DomicilioEntrega) ||
+                    string.IsNullOrWhiteSpace(model.Ciudad) ||
+                    string.IsNullOrWhiteSpace(model.Provincia))
                 {
-                    TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados.";
-                    return View(fleetModel);
+                    TempData["ErrorMessageCreateOrder"] = "Todos los campos obligatorios deben ser completados.";
+                    return View(model);
                 }
 
                 // No se permiten valores negativos al menos en la validación básica
-                if ((decimal.TryParse(fleetModel.Ancho.Replace(",", "."), out var ancho) && ancho < 0) ||
-                    (decimal.TryParse(fleetModel.Largo.Replace(",", "."), out var largo) && largo < 0) ||
-                    (decimal.TryParse(fleetModel.Alto.Replace(",", "."), out var alto) && alto < 0) ||
-                    (decimal.TryParse(fleetModel.CapacidadPeso.Replace(",", "."), out var peso) && peso < 0) ||
-                    (decimal.TryParse(fleetModel.CapacidadVolumen.Replace(",", "."), out var volumen) && volumen < 0))
+                if ((decimal.TryParse(model.Ancho.Replace(",", "."), out var ancho) && ancho < 0) ||
+                    (decimal.TryParse(model.Largo.Replace(",", "."), out var largo) && largo < 0) ||
+                    (decimal.TryParse(model.Alto.Replace(",", "."), out var alto) && alto < 0) ||
+                    (decimal.TryParse(model.Peso.Replace(",", "."), out var peso) && peso < 0))
                 {
-                    TempData["ErrorMessageEditFleet"] = "No se permiten valores negativos.";
-                    return View(fleetModel);
-                }
-
-                // Validaciones básicas
-                if (fleetModel.Estado < 0 || fleetModel.Estado > 1)
-                {
-                    TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados correctamente";
-                    return View(fleetModel);
-                }
-                // Verificar si la patente ya existe
-
-                var vehiculoDb = _fleetService.retornarFleetModelConPatente(fleetModel.Patente);
-                if (vehiculoDb != null)
-                {
-                    TempData["ErrorMessageCreateFleet"] = "Patente ya ingresada, ingrese devuelta..";
-
-                    return View(fleetModel);
+                    TempData["ErrorMessageCreateOrder"] = "No se permiten valores negativos.";
+                    return View(model);
                 }
 
 
-                var resultado = _fleetService.CrearFleet(fleetModel);
+
+                // Espera a que se complete la tarea
+                ResultadoOperacion resultado = await _orderService.CrearPedido(model);
 
 
                 if (!resultado.Exito)
                 {
                     // Mostrar error en la misma vista
-                    TempData["ErrorMessageCreateClient"] = resultado.Mensaje;
+                    TempData["ErrorMessageCreateOrder"] = resultado.Mensaje;
 
-                    return View(fleetModel);
+                    return View(model);
                 }
 
                 string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
-                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Crear vehiculo", "Se creo el vehiculo con patenete: " + fleetModel.Patente, ipAddress);
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Crear pedido", "Se creo el pedido", ipAddress);
 
-                TempData["MensajeExitoFormularioCrearVehiculo"] = resultado.Mensaje;
+                TempData["MensajeExitoFormularioCrearPedido"] = resultado.Mensaje;
                 return View();
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessageCreateFleet"] = $"Error interno del servidor: {ex.Message}";
-                return View(fleetModel);
+                TempData["ErrorMessageCreateOrder"] = $"Error interno del servidor: {ex.Message}";
+                return View(model);
             }
 
 
@@ -485,7 +464,7 @@ namespace VIPS.Web.Controllers
 
 
         [HttpGet("DeleteOrder/{idPedido}")]
-        public IActionResult DeleteOrder(int idPedido, OrderModel model)
+        public IActionResult DeleteOrder(int idPedido)
         {
             // Leer claims desde la cookie
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
@@ -497,81 +476,57 @@ namespace VIPS.Web.Controllers
             ViewBag.idPedido = idPedido;
 
 
-
-
-
-
-
-            /*try
-            {
-                // 1. Validaciones
-                if (model.Ancho <= 0 || model.Largo <= 0 || model.Alto <= 0 || model.Peso <= 0)
-                {
-                    TempData["ErrorMessageCreateOrder"] = "Las dimensiones y el peso deben ser mayores a cero.";
-                    return View(model);
-                }
-
-                var cliente = _clienteService.retornarClienteModelConIdCliente(model.IdCliente);
-                if (cliente == null)
-                {
-                    TempData["ErrorMessageCreateOrder"] = "Seleccione un cliente válido.";
-                    return View(model);
-                }
-
-                if (string.IsNullOrWhiteSpace(model.DomicilioEntrega))
-                {
-                    TempData["ErrorMessageCreateOrder"] = "Ingrese una dirección válida.";
-                    return View(model);
-                }
-
-
-                // 2. Obtener/crear domicilio
-                var idDomicilio = _orderService.BuscarIdDomicilioConDomicilio(model.DomicilioEntrega);
-
-                if (idDomicilio == null || idDomicilio == -1)
-                {
-                    //creo domicilio
-
-                    var datosApi = _geoApi.ObtenerDatosDireccion(model.DireccionTexto);
-                    var domicilioCreado = _domicilioService.CrearDomicilio(datosApi);
-                    idDomicilio = domicilioCreado.IdDomicilioEntrega;
-                }
-
-                model.IdDomicilioEntrega = idDomicilio;
-
-
-
-
-
-
-                var resultado = _clientService.CrearCliente(clienteModel);
-
-
-                if (!resultado.Exito)
-                {
-                    // Mostrar error en la misma vista
-                    TempData["ErrorMessageCreateClient"] = resultado.Mensaje;
-
-                    return View(clienteModel);
-                }
-
-                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
-                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
-                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Crear cliente", "Se creo cliente con nombre: " + clienteModel.Nombre, ipAddress);
-
-                TempData["MensajeExitoFormularioCrearCliente"] = resultado.Mensaje;
-                return RedirectToAction("CreateClient");
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessageCreateClient"] = $"Error interno del servidor: {ex.Message}";
-                return View(clienteModel);
-            }*/
-
-
-
             return View();
         }
+
+        [HttpPost("DeleteOrder/{idPedido}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteOrder(string eleccion,int idPedido)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.idPedido = idPedido;
+
+
+            if (eleccion == "no")
+            {
+                TempData["ErrorMessageDeleteOrder"] = "Ocurrio un error.";
+
+                return View();
+            }
+
+            var pedidoDb = _orderService.RetornarOrderModelConIdPedido(idPedido);
+
+            if (pedidoDb == null)
+            {
+                TempData["ErrorMessageDeleteOrder"] = "El pedido no existe.";
+                return View();
+            }
+
+
+            var resultado = _orderService.EliminarPedido(idPedido);
+
+
+            if (!resultado.Exito)
+            {
+                // Mostrar error en la misma vista
+                TempData["ErrorMessageDeleteOrder"] = $"Error al eliminar pedido: {resultado.Mensaje}";
+            }
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion pedido", nombreUsuario + " Elimino el pedido con id: " + idPedido, ipAddress);
+
+            TempData["SuccessDeleteOrderMessage"] = $"Id pedido '{idPedido}' eliminado correctamente";
+            return View();
+        }
+
+
+
 
         [HttpGet("EditOrder/{idPedido}")]
         public IActionResult EditOrder(int idPedido)
@@ -585,9 +540,96 @@ namespace VIPS.Web.Controllers
             ViewBag.RolUsuario = rolUsuario;
             ViewBag.idPedido = idPedido;
 
-            return View();
+            ViewBag.Clientes = _clientService.ObtenerListaNombreyIdCliente();
+            ViewBag.EstadosPedidos = _orderService.ObtenerListaNombreyIdEstado();
+
+
+
+            return View(_orderService.RetornarOrderModelConIdPedido(idPedido));
         }
 
+
+        [HttpPost("EditOrder/{idPedido}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditOrder(int idPedido, OrderModel model)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            ViewBag.Clientes = _clientService.ObtenerListaNombreyIdCliente();
+            ViewBag.EstadosPedidos = _orderService.ObtenerListaNombreyIdEstado();
+
+
+
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessageEditOrder"] = "Ocurrio un error.";
+
+                    return View(model);
+                }
+
+                // Validaciones básicas: que no estén vacíos
+                if (string.IsNullOrWhiteSpace(model.Ancho) ||
+                    string.IsNullOrWhiteSpace(model.Largo) ||
+                    string.IsNullOrWhiteSpace(model.Alto) ||
+                    string.IsNullOrWhiteSpace(model.Peso) ||
+                    string.IsNullOrWhiteSpace(model.DomicilioEntrega) ||
+                    string.IsNullOrWhiteSpace(model.Ciudad) ||
+                    string.IsNullOrWhiteSpace(model.Provincia))
+                {
+                    TempData["ErrorMessageEditOrder"] = "Todos los campos obligatorios deben ser completados.";
+                    return View(model);
+                }
+
+                // No se permiten valores negativos al menos en la validación básica
+                if ((decimal.TryParse(model.Ancho.Replace(",", "."), out var ancho) && ancho < 0) ||
+                    (decimal.TryParse(model.Largo.Replace(",", "."), out var largo) && largo < 0) ||
+                    (decimal.TryParse(model.Alto.Replace(",", "."), out var alto) && alto < 0) ||
+                    (decimal.TryParse(model.Peso.Replace(",", "."), out var peso) && peso < 0))
+                {
+                    TempData["ErrorMessageEditOrder"] = "No se permiten valores negativos.";
+                    return View(model);
+                }
+
+
+
+                // Espera a que se complete la tarea
+                ResultadoOperacion resultado = await _orderService.EditarPedido(model);
+
+
+                if (!resultado.Exito)
+                {
+                    // Mostrar error en la misma vista
+                    TempData["ErrorMessageEditOrder"] = resultado.Mensaje;
+
+                    return View(model);
+                }
+
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion pedido", "Se edito el pedido con id: " + model.IdPedido, ipAddress);
+
+                TempData["MensajeExitoFormularioEditarPedido"] = resultado.Mensaje;
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessageEditOrder"] = $"Error interno del servidor: {ex.Message}";
+                return View(model);
+            }
+
+
+
+
+
+            return View(model);
+        }
 
         public IActionResult MyAccount()
         {
@@ -658,9 +700,9 @@ namespace VIPS.Web.Controllers
         }
 
 
-        public IActionResult ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc")
+        public IActionResult ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc", string? nombreCliente = null)
         {
-            var pdfBytes = _orderService.ExportarPedidosPdf(columna, orden);
+            var pdfBytes = _orderService.ExportarPedidosPdf(columna, orden, nombreCliente);
 
             // Log de exportación
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
@@ -671,9 +713,9 @@ namespace VIPS.Web.Controllers
         }
 
 
-        public IActionResult ExportarClientesPdf(string columna = "fechaCreacion", string orden = "desc")
+        public IActionResult ExportarClientesPdf(string columna = "fechaCreacion", string orden = "desc", string? nombreCliente = null)
         {
-            var pdfBytes = _clientService.ExportarClientesPdf(columna, orden);
+            var pdfBytes = _clientService.ExportarClientesPdf(columna, orden, nombreCliente);
 
             var nombreArchivo = "ReporteClientes.pdf";
             return File(pdfBytes, "application/pdf", nombreArchivo);

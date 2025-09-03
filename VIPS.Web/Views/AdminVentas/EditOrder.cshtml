@@ -1,0 +1,86 @@
+@model OrderModel
+
+@{
+    Layout = "_AdminVentasLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+<form asp-controller="AdminVentas" asp-action="EditOrder" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Editar Pedido" : "Edit Order")</h3>
+    @Html.AntiForgeryToken()
+
+    @if (TempData["ErrorMessageEditOrder"] != null)
+    {
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageEditOrder"]</p>
+    </div>
+    }
+
+    @if (TempData["MensajeExitoFormularioEditarPedido"] != null)
+    {
+    <div class="alert alert-success">
+        <p class="exito">@TempData["MensajeExitoFormularioEditarPedido"]</p>
+    </div>
+    }
+
+    <input type="hidden" id="IdPedido" name="IdPedido" value="@Model.IdPedido" />
+
+
+    <!-- Cliente -->
+    <div class="row">
+        <label for="idCliente">@((lang == "es") ? "Cliente *" : "Client *")</label>
+        <select asp-for="IdCliente" asp-items="ViewBag.Clientes" class="form-control" required>
+            <option value="">@(lang == "es" ? "Seleccione un cliente" : "Select a client")</option>
+        </select>
+        <span class="field-validation-error" data-valmsg-for="IdCliente" data-valmsg-replace="true"></span>
+    </div>
+
+    <!-- Dimensiones -->
+    <div class="row">
+        <label for="Ancho">@((lang == "es") ? "Ancho (cm) *" : "Width (cm) *")</label>
+        <input asp-for="Ancho" class="form-control" required>
+    </div>
+
+    <div class="row">
+        <label for="Largo">@((lang == "es") ? "Largo (cm) *" : "Length (cm) *")</label>
+        <input asp-for="Largo" class="form-control" required>
+    </div>
+
+    <div class="row">
+        <label for="Alto">@((lang == "es") ? "Alto (cm) *" : "Height (cm) *")</label>
+        <input asp-for="Alto" class="form-control" required>
+    </div>
+
+    <div class="row">
+        <label for="Peso">@((lang == "es") ? "Peso (gr) *" : "Weight (gr) *")</label>
+        <input asp-for="Peso" class="form-control" required>
+    </div>
+
+    <!-- Domicilio -->
+    <div class="row">
+        <label for="DomicilioEntrega">@((lang == "es") ? "Domicilio de entrega *" : "Order address *")</label>
+        <input asp-for="DomicilioEntrega" class="form-control" required placeholder="Ej: Luis Maria Campos 1149">
+    </div>
+
+    <div class="row">
+        <label for="Ciudad">@((lang == "es") ? "Ciudad *" : "City *")</label>
+        <input asp-for="Ciudad" class="form-control" required>
+    </div>
+
+    <div class="row">
+        <label for="Provincia">@((lang == "es") ? "Provincia *" : "State *")</label>
+        <input asp-for="Provincia" class="form-control" required>
+    </div>
+
+    <!-- Estado -->
+    <div class="row">
+        <label for="IdEstadoPedido">@((lang == "es") ? "EstadoPedido *" : "Order state *")</label>
+        <select asp-for="IdEstadoPedido" asp-items="ViewBag.EstadosPedidos" class="form-control" required>
+            <option value="">@(lang == "es" ? "Seleccione un estado" : "Select a state")</option>
+        </select>
+        <span class="field-validation-error" data-valmsg-for="IdEstadoPedido" data-valmsg-replace="true"></span>
+    </div>
+
+    <button type="submit" class="btn-principal">@((lang == "es") ? "Guardar Cambios" : "Save Changes")</button>
+    <a class="restablecer" asp-controller="AdminVentas" asp-action="OrderManagement">@((lang == "es") ? "Volver" : "Back")</a>
+</form>

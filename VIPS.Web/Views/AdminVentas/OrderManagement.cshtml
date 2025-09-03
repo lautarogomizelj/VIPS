@@ -17,8 +17,8 @@
                     <option value="idPedido" selected="@(ViewBag.Columna == "id" ? "selected" : null)">
                         @(lang == "es" ? "ID Pedido" : "Order ID")
                     </option>
-                    <option value="idCliente" selected="@(ViewBag.Columna == "nombre" ? "selected" : null)">
-                        @(lang == "es" ? "ID Cliente" : "Client ID")
+                    <option value="nombreCliente" selected="@(ViewBag.Columna == "nombre" ? "selected" : null)">
+                        @(lang == "es" ? "Nombre cliente" : "Client Name")
                     </option>
                     <option value="peso" selected="@(ViewBag.Columna == "apellido" ? "selected" : null)">
                         @(lang == "es" ? "Peso" : "Weight")
@@ -48,7 +48,16 @@
                 </select>
             </div>
 
-            <button class="btn-principal filtros" type="submit">@(lang == "es" ? "Aplicar filtros" : "Apply Filters")</button>
+
+
+            <div class="contenedor-info">
+                <label for="nombreCliente"><h4>@(lang == "es" ? "Nombre cliente:" : "Client name:")</h4></label>
+                <input type="text" id="IdPnombreClienteedido" name="nombreCliente" class="form-control" value="@ViewBag.NombreCliente" />
+            </div>
+
+            <div class="contenedor-info">
+                <button class="btn-principal filtros" type="submit">@(lang == "es" ? "Aplicar filtros" : "Apply Filters")</button>
+            </div>
 
         </form>
 
@@ -56,7 +65,7 @@
             @(lang == "es" ? "Agregar pedido" : "Add order")
         </a>
 
-        <a asp-controller="AdminVentas" asp-action="ExportarPedidosPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" class="btn-principal filtros">
+        <a asp-controller="AdminVentas" asp-action="ExportarPedidosPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" asp-route-nombreCliente="@ViewBag.NombreCliente" class="btn-principal filtros">
             @(lang == "es" ? "Exportar a pdf" : "Export to PDF")
         </a>
     </div>
@@ -65,8 +74,8 @@
     <table>
         <tr>
             <th>@(lang == "es" ? "Id pedido" : "Order ID")</th>
-            <th>@(lang == "es" ? "Id cliente" : "Client ID")</th>
-            <th>@(lang == "es" ? "Peso" : "Weight")</th>
+            <th>@(lang == "es" ? "Nombre cliente" : "Client name")</th>
+            <th>@(lang == "es" ? "Peso (gr)" : "Weight (gr)")</th>
             <th>@(lang == "es" ? "Fecha creacion" : "Creation Date")</th>
             <th>@(lang == "es" ? "Fecha despacho" : "Delivery Date")</th>
             <th>@(lang == "es" ? "Estado" : "Status")</th>
@@ -79,10 +88,11 @@
 {
         <tr>
             <td>@pedido.IdPedido</td>
-            <td>@pedido.IdCliente</td>
+            <td>@pedido.NombreCliente</td>
             <td>@pedido.Peso</td>
             <td>@pedido.FechaCreacion</td>
-            <td>@pedido.FechaDespacho</td>
+            <td>@(pedido.FechaDespacho?.ToString("dd/MM/yyyy") ?? "-")</td>
+
             <td>@pedido.EstadoPedido</td>
             <td>@pedido.Direccion</td>
 

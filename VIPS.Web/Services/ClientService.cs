@@ -72,7 +72,7 @@ namespace VIPS.Web.Services
 
 
 
-        public List<ClienteViewModel> ObtenerClientes(string columna, string orden)
+        public List<ClienteViewModel> ObtenerClientes(string columna, string orden, string? parametro = null)
         {
             try
             {
@@ -83,12 +83,28 @@ namespace VIPS.Web.Services
                 // Orden seguro
                 var ordenSeguro = (orden?.ToUpper() == "DESC") ? "DESC" : "ASC";
 
-                var query = $@"select idCliente, nombre, apellido, domicilioLegal, fechaCreacion from Cliente where eliminado = 0 order by {columna} {ordenSeguro}";
+                var query = $@"select idCliente, nombre, apellido, domicilioLegal, fechaCreacion from Cliente where eliminado = 0";
+
+                if (!string.IsNullOrEmpty(parametro))
+                {
+                    query += $@" AND nombre LIKE @parametro order by {columna} {ordenSeguro}";
+                }
+                else
+                {
+                    query += $" order by {columna} {ordenSeguro}";
+
+                }
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 connection.Open();
 
                 using var cmd = new SqlCommand(query, connection);
+                if (!string.IsNullOrEmpty(parametro))
+                {
+                    // Búsqueda parcial
+                    cmd.Parameters.AddWithValue("@parametro", "%" + parametro + "%");
+                }
+
                 using var adapter = new SqlDataAdapter(cmd);
 
                 var dataTable = new DataTable();
@@ -145,11 +161,11 @@ namespace VIPS.Web.Services
             return count > 0;
         }
 
-        public List<SelectListItem> ObtenerListaNombreyDni()
+        public List<SelectListItem> ObtenerListaNombreyIdCliente()
         {
             try
             {
-                var query = "SELECT nombre, dni FROM Cliente where eliminado = 0 ORDER BY dni DESC";
+                var query = "SELECT nombre, idCliente FROM Cliente where eliminado = 0 ORDER BY idCliente DESC";
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 connection.Open();
@@ -166,7 +182,7 @@ namespace VIPS.Web.Services
                 {
                     lista.Add(new SelectListItem
                     {
-                        Value = row["dni"].ToString(),   // value = dni
+                        Value = row["idCliente"].ToString(),   
                         Text = row["nombre"].ToString()  // texto visible = nombre
                     });
                 }
@@ -363,9 +379,9 @@ namespace VIPS.Web.Services
 
 
 
-        public byte[] ExportarClientesPdf(string columna = "fechaCreacion", string orden = "desc")
+        public byte[] ExportarClientesPdf(string columna = "fechaCreacion", string orden = "desc", string? parametro = null)
         {
-            var clientes = ObtenerClientes(columna, orden);
+            var clientes = ObtenerClientes(columna, orden, parametro);
 
             using var ms = new MemoryStream();
             PdfDocument document = new PdfDocument();

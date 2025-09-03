@@ -13,7 +13,7 @@ namespace VIPS.Web.Services
             _configuration = configuration;
         }
 
-        public List<LogViewModel> ObtenerLogs(int cantidadLogs, string columna, string orden)
+        public List<LogViewModel> ObtenerLogs(int cantidadLogs, string columna, string orden, string? parametro = null)
         {
             try
             {
@@ -21,24 +21,39 @@ namespace VIPS.Web.Services
                 if (!columnasPermitidas.Contains(columna))
                     throw new ArgumentException("Columna no válida");
 
-
-                // Orden seguro
                 var ordenSeguro = (orden?.ToUpper() == "DESC") ? "DESC" : "ASC";
 
-                var query = @$"SELECT TOP (@cantidadLogs) idLogActividad, usuario, FechaHora, Accion, Detalle FROM LogActividad l inner join Usuario u on l.idUsuario = u.idUsuario ORDER BY {columna} {ordenSeguro}";
+                var query = @"SELECT idLogActividad, usuario, FechaHora, Accion, Detalle
+                      FROM LogActividad l
+                      INNER JOIN Usuario u ON l.idUsuario = u.idUsuario";
+
+                if (!string.IsNullOrWhiteSpace(parametro))
+                {
+                    query += " WHERE detalle LIKE @parametro";
+                }
+
+                query += $" ORDER BY {columna} {ordenSeguro} OFFSET 0 ROWS FETCH NEXT @cantidadLogs ROWS ONLY";
+
 
                 using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 conn.Open();
 
                 using var cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@cantidadLogs", cantidadLogs);
-                using var adapter = new SqlDataAdapter(cmd);
 
+                cmd.Parameters.AddWithValue("@cantidadLogs", cantidadLogs);
+
+                if (!string.IsNullOrWhiteSpace(parametro))
+                {
+                    cmd.Parameters.AddWithValue("@parametro", "%" + parametro + "%");
+                }
+
+
+                using var adapter = new SqlDataAdapter(cmd);
                 var dataTable = new DataTable();
                 adapter.Fill(dataTable);
 
-                var lista = new List<LogViewModel>();
 
+                var lista = new List<LogViewModel>();
                 foreach (DataRow row in dataTable.Rows)
                 {
                     lista.Add(new LogViewModel
@@ -47,18 +62,19 @@ namespace VIPS.Web.Services
                         Usuario = row["usuario"].ToString(),
                         FechaHora = Convert.ToDateTime(row["FechaHora"]),
                         Accion = row["Accion"].ToString(),
-                        Detalle = row["Detalle"].ToString(),
-
+                        Detalle = row["Detalle"] == DBNull.Value ? null : row["Detalle"].ToString()
                     });
                 }
 
                 return lista;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
+                // Podés loguear ex.Message si querés depurar
                 return new List<LogViewModel>();
             }
         }
+
 
         public void AgregarLog(string username, DateTime fechaHora, string accion, string detalle, string ip)
         {

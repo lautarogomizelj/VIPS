@@ -56,7 +56,7 @@ namespace VIPS.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult OrderManagement(string columna = "fechaCreacion", string orden = "desc")
+        public IActionResult OrderManagement(string columna = "fechaCreacion", string orden = "desc", string? nombreCliente = null)
         {
             try
             {
@@ -67,8 +67,10 @@ namespace VIPS.Web.Controllers
                 // Pasar al layout
                 ViewBag.NombreUsuario = nombreUsuario;
                 ViewBag.RolUsuario = rolUsuario;
+                ViewBag.NombreCliente = nombreCliente;
 
-                var pedidos = _orderService.ObtenerPedidos(columna, orden);
+
+                var pedidos = _orderService.ObtenerPedidos(columna, orden, nombreCliente);
 
                 return View(pedidos);
             }
@@ -80,7 +82,7 @@ namespace VIPS.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult FleetManagement(string columna = "fechaCreacion", string orden = "desc")
+        public IActionResult FleetManagement(string columna = "fechaCreacion", string orden = "desc", string? patente = null)
         {
             try
             {
@@ -91,8 +93,9 @@ namespace VIPS.Web.Controllers
                 // Pasar al layout
                 ViewBag.NombreUsuario = nombreUsuario;
                 ViewBag.RolUsuario = rolUsuario;
+                ViewBag.Patente = patente;
 
-                var flota = _fleetService.ObtenerFlota(columna, orden);
+                var flota = _fleetService.ObtenerFlota(columna, orden, patente);
 
                 return View(flota);
 
@@ -445,9 +448,9 @@ namespace VIPS.Web.Controllers
         }
 
 
-        public IActionResult ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc")
+        public IActionResult ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc", string? nombreCliente = null)
         {
-            var pdfBytes = _orderService.ExportarPedidosPdf(columna, orden);
+            var pdfBytes = _orderService.ExportarPedidosPdf(columna, orden, nombreCliente);
 
             // Log de exportación
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
@@ -458,9 +461,9 @@ namespace VIPS.Web.Controllers
         }
 
 
-        public IActionResult ExportarFlotaPdf(string columna = "fechaCreacion", string orden = "desc")
+        public IActionResult ExportarFlotaPdf(string columna = "fechaCreacion", string orden = "desc", string? patente = null)
         {
-            var pdfBytes = _fleetService.ExportarFlotaPdf(columna, orden);
+            var pdfBytes = _fleetService.ExportarFlotaPdf(columna, orden, patente);
 
             // Agregar log de exportación (opcional)
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);

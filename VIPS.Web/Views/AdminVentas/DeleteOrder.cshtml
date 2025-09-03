@@ -1,5 +1,5 @@
 @{
-    Layout = "_AdminLayout";
+    Layout = "_AdminVentasLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
@@ -21,7 +21,7 @@
     </div>
    }
 
-    <input type="hidden" value="ViewBag.idPedido" name="idPedido" />
+    <input type="hidden" value="@ViewBag.idPedido" name="idPedido" />
 
     <div class="row">
         <label for="eleccion">

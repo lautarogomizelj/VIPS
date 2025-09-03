@@ -4,7 +4,7 @@ namespace VIPS.Web.Models
     {
         public int      IdPedido            { get; set; }
 
-        public int      IdCliente           { get; set; }
+        public int   IdCliente                 { get; set; }
         public string   Ancho               { get; set; }
         public string   Largo               { get; set; }
         public string   Alto                { get; set; }

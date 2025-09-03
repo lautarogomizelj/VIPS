@@ -40,7 +40,15 @@
                 </select>
             </div>
 
-            <button class="btn-principal filtros" type="submit">@(lang == "es" ? "Aplicar filtros" : "Apply Filters")</button>
+
+            <div class="contenedor-info">
+                <label for="usuario"><h4>@(lang == "es" ? "Usuario:" : "Username:")</h4></label>
+                <input type="text" id="usuario" name="usuario" class="form-control" value="@ViewBag.Usuario" />
+            </div>
+
+            <div class="contenedor-info">
+                <button class="btn-principal filtros" type="submit">@(lang == "es" ? "Aplicar filtros" : "Apply Filters")</button>
+            </div>
 
         </form>
 
@@ -48,7 +56,7 @@
             @(lang == "es" ? "Agregar usuario" : "Add User")
         </a>
 
-        <a asp-controller="AdminGeneral" asp-action="ExportarUsuariosPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" class="btn-principal filtros">
+        <a asp-controller="AdminGeneral" asp-action="ExportarUsuariosPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden"  asp-route-usuario="@ViewBag.Usuario" class="btn-principal filtros">
             @(lang == "es" ? "Exportar a pdf" : "Export to PDF")
         </a>
     </div>

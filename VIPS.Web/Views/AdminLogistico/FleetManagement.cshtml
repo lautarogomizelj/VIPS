@@ -7,7 +7,7 @@
 
     <div class="filtrosContenedor">
 
-        <form method="get" asp-controller="AdminLogistico" asp-action="FleetManagement" class="FILTER" style="width:335px">
+        <form method="get" asp-controller="AdminLogistico" asp-action="FleetManagement" class="FILTER">
 
             <div class="contenedor-info">
                 <label for="columna"><h4>@(lang == "es" ? "Columna:" : "Column:")</h4></label>
@@ -44,9 +44,18 @@
                 </select>
             </div>
 
-            <button class="btn-principal filtros" type="submit">
-                @(lang == "es" ? "Aplicar filtros" : "Apply Filters")
-            </button>
+            <div class="contenedor-info">
+                <label for="patente"><h4>@(lang == "es" ? "Patente:" : "License Plate:")</h4></label>
+                <input type="text" id="patente" name="patente" class="form-control" value="@ViewBag.Patente"/>
+            </div>
+
+            <div class="contenedor-info">
+                <button class="btn-principal filtros" type="submit">
+                    @(lang == "es" ? "Aplicar filtros" : "Apply Filters")
+                </button>
+            </div>
+
+
 
         </form>
 
@@ -54,9 +63,7 @@
             @(lang == "es" ? "Agregar camion" : "Add truck")
         </a>
 
-        <a asp-controller="AdminLogistico" asp-action="SearchFleer" class="btn-principal filtros"> @(lang == "es" ? "Buscar camion" : "Search truck") </a>
-
-        <a asp-controller="AdminLogistico" asp-action="ExportarFlotaPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" class="btn-principal filtros">
+        <a asp-controller="AdminLogistico" asp-action="ExportarFlotaPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" asp-route-patente="@ViewBag.Patente"class="btn-principal filtros">
             @(lang == "es" ? "Exportar a PDF" : "Export to PDF")
         </a>
     </div>

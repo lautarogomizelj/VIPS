@@ -381,7 +381,7 @@ form.CRUD{
     }
 
 form.FILTER{
-    width: 300px;
+    width: 570px;
     padding: 0;
     position: relative;
     transform: none;
@@ -391,6 +391,10 @@ form.FILTER{
     justify-content: space-between;
     align-items:center;
 }
+
+    form div:nth-of-type(even){
+        margin: 0 !important;
+    }
 
     form.FILTER .contenedor-info {
         display: flex;
