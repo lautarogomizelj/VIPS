@@ -27,10 +27,12 @@ namespace VIPS.Web.Controllers
         private readonly ClientService _clientService;
         private readonly OrderService _orderService;
         private readonly FleetService _fleetService;
+        private readonly RouteService _routeService;
 
 
 
-        public AdminLogisticoController(IConfiguration configuration, IHashService hashService, LogService logService, ClientService clientService, OrderService orderService, UserService userService, FleetService fleetService)
+
+        public AdminLogisticoController(IConfiguration configuration, IHashService hashService, LogService logService, ClientService clientService, OrderService orderService, UserService userService, FleetService fleetService, RouteService routeService)
         {
             _configuration = configuration;
             _hashService = hashService;
@@ -39,6 +41,7 @@ namespace VIPS.Web.Controllers
             _logService = logService;
             _orderService = orderService;
             _fleetService = fleetService;
+            _routeService = routeService;
 
         }
 
@@ -53,6 +56,32 @@ namespace VIPS.Web.Controllers
             ViewBag.RolUsuario = rolUsuario;
 
             return View();
+        }
+
+
+        [HttpGet]
+        public IActionResult RouteManagement(string columna = "r.fechaCreacion", string orden = "desc")
+        {
+            try
+            {
+                // Leer claims desde la cookie
+                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+                // Pasar al layout
+                ViewBag.NombreUsuario = nombreUsuario;
+                ViewBag.RolUsuario = rolUsuario;
+
+
+                var rutas = _routeService.ObtenerRutas(columna, orden);
+
+                return View(rutas);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Error al cargar las rutas";
+                return View(new List<RouteViewModel>());
+            }
         }
 
         [HttpGet]
@@ -175,6 +204,16 @@ namespace VIPS.Web.Controllers
             return RedirectToAction("MyAccount");
         }
 
+
+        [HttpGet]
+        public async Task<IActionResult> GenerarRuta()
+        {
+            // Llama al servicio que envía el JSON de prueba a Vroom
+            var resultadoJson = await _routeService.GetRouteAsync();
+
+            // Devuelve la respuesta directamente como JSON
+            return Content(resultadoJson, "application/json");
+        }
 
         /*+-----------------------------ABM FLEET-----------------------------------------*/
         /*---------------GET-------------*/

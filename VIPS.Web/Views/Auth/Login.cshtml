@@ -6,35 +6,53 @@
 
 
 
-<section>
+<div class="login-card">
+    <h2 class="login-title">Ingresar a cuenta</h2>
+    <p class="login-subtitle">Accede a tu panel</p>
+
     <form method="post" asp-controller="Auth" asp-action="Login">
-        <h3>Ingresar a cuenta</h3>
-        <div class="row">
-            <label for="username">
-                <span>Usuario</span>
-            </label>
-            <input type="text" name="username" maxlength="100" required>
+        <div class="form-group">
+            <label for="username" class="form-label">Usuario</label>
+            <input type="text"
+                   id="username"
+                   name="username"
+                   class="form-input"
+                   maxlength="100"
+                   required
+                   placeholder="Ingresa tu usuario">
         </div>
 
-        <div class="row">
-            <label for="password">
-                <span>Contraseña</span>
-            </label>
-            <input type="password" name="password" maxlength="100" required>
+        <div class="form-group">
+            <label for="password" class="form-label">Contraseña</label>
+            <input type="password"
+                   id="password"
+                   name="password"
+                   class="form-input"
+                   maxlength="100"
+                   required
+                   placeholder="Ingresa tu contraseña">
         </div>
 
-        <a asp-controller="Auth" asp-action="RestorePassword" class="restablecer">¿Olvidaste tu contraseña?</a>
+        <a asp-controller="Auth" asp-action="RestorePassword" class="forgot-password">¿Olvidaste tu contraseña?</a>
 
-        <button class="btn-principal" type="submit" style="width:100% !important">Iniciar Sesion</button>
+        <button type="submit" class="btn-principal" id="loginBtn">
+            <div class="loading"></div>
+            <span>Iniciar Sesión</span>
+        </button>
 
-        <br />
+        <!-- Error Message (hidden by default) -->
+
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-        <div>
-            <p class="error">
-                @errorMessage
-            </p>
-        </div>
+                <div class="error-message" id="errorMessage">
+                    ❌ <span>@errorMessage</span>
+                </div>
         }
+
+
+        
     </form>
-</section>
+
+</div>
+
+

@@ -71,28 +71,36 @@
 
 
     <table>
-        <tr>
-            <th>@(lang == "es" ? "Id pedido" : "Order ID")</th>
-            <th>@(lang == "es" ? "Nombre cliente" : "Client name")</th>
-            <th>@(lang == "es" ? "Peso (gr)" : "Weight (gr)")</th>
-            <th>@(lang == "es" ? "Fecha creacion" : "Creation Date")</th>
-            <th>@(lang == "es" ? "Fecha despacho" : "Delivery Date")</th>
-            <th>@(lang == "es" ? "Estado" : "Status")</th>
-            <th>@(lang == "es" ? "Direccion" : "Adress")</th>
+        <thead>
 
-        </tr>
+            <tr>
+                <th>@(lang == "es" ? "Id pedido" : "Order ID")</th>
+                <th>@(lang == "es" ? "Nombre cliente" : "Client name")</th>
+                <th>@(lang == "es" ? "Peso (gr)" : "Weight (gr)")</th>
+                <th>@(lang == "es" ? "Fecha creacion" : "Creation Date")</th>
+                <th>@(lang == "es" ? "Fecha despacho" : "Delivery Date")</th>
+                <th>@(lang == "es" ? "Estado" : "Status")</th>
+                <th>@(lang == "es" ? "Direccion" : "Adress")</th>
 
-        @foreach (var pedido in Model)
-{
-        <tr>
-            <td>@pedido.IdPedido</td>
-            <td>@pedido.NombreCliente</td>
-            <td>@pedido.Peso</td>
-            <td>@pedido.FechaCreacion</td>
-            <td>@(pedido.FechaDespacho?.ToString("dd/MM/yyyy") ?? "-")</td>
+            </tr>
+        </thead>
 
-            <td>@pedido.EstadoPedido</td>
-            <td>@pedido.Direccion</td>
-        </tr>
-}
+        <tbody>
+
+
+            @foreach (var pedido in Model)
+            {
+                        <tr>
+                            <td>@pedido.IdPedido</td>
+                            <td>@pedido.NombreCliente</td>
+                            <td>@pedido.Peso</td>
+                            <td>@pedido.FechaCreacion</td>
+                            <td>@(pedido.FechaDespacho?.ToString("dd/MM/yyyy") ?? "-")</td>
+
+                            <td>@pedido.EstadoPedido</td>
+                            <td>@pedido.Direccion</td>
+                        </tr>
+            }
+        </tbody>
+
     </table>

@@ -33,6 +33,8 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ClientService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<FleetService>();
+builder.Services.AddHttpClient<RouteService>();
+
 
 
 
@@ -75,6 +77,11 @@ app.MapControllerRoute(
     name: "adminVentas",
     pattern: "AdminVentas/{action=Index}/{id?}",
     defaults: new { controller = "AdminVentas" });
+
+app.MapControllerRoute(
+    name: "conductor",
+    pattern: "Conductor/{action=Index}/{id?}",
+    defaults: new { controller = "Conductor" });
 
 
 

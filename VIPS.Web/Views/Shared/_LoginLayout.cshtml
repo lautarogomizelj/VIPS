@@ -4,26 +4,31 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - VIPS</title>
-    <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
     <link rel="shortcut icon" href="~/images/logo.png" />
 
 </head>
 <body>
-    <header>
-        <h1>VIPS</h1>
-    </header>
+    <!-- Header -->
+    <div class="login-header">
+        <div class="logo-container">
+            <img src="~/images/logo.png" alt="Logo empresa VIPS">
+        </div>
+        <h1 class="header-title">VIPS</h1>
+    </div>
 
 
-    <main role="main" class="pb-3">
+    <main role="main" class="login-container">
         @RenderBody()
     </main>
 
-    <!--<footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - VIPS.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <!-- Footer -->
+    <div class="login-footer">
+        <div class="footer-text">
+            © <span class="year">2025</span> VIPS. Todos los derechos reservados.
         </div>
-    </footer>-->
-   
+    </div>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -242,6 +242,182 @@ namespace VIPS.Web.Controllers
             }
         }
 
+
+
+
+
+
+
+        [HttpGet("EditFleetGeneral/{patente}")]
+        public IActionResult EditFleetGeneral(string patente)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.patente = patente;
+
+
+            return View(_fleetService.retornarFleetModelConPatente(patente));
+        }
+
+
+
+        [HttpPost("EditFleetGeneral/{patente}")]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditFleetGeneral(string patente, FleetModel fleetmodel)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            Console.WriteLine("entro 1");
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.patente = patente;
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessageEditFleet"] = "Ocurrio un error.";
+
+                return View(fleetmodel);
+            }
+
+            // Validaciones básicas: que no estén vacíos ni negativos
+            if (string.IsNullOrWhiteSpace(fleetmodel.Ancho) ||
+                string.IsNullOrWhiteSpace(fleetmodel.Largo) ||
+                string.IsNullOrWhiteSpace(fleetmodel.Alto) ||
+                string.IsNullOrWhiteSpace(fleetmodel.CapacidadPeso) ||
+                string.IsNullOrWhiteSpace(fleetmodel.CapacidadVolumen))
+            {
+                TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados.";
+                return View(fleetmodel);
+            }
+
+            // No se permiten valores negativos al menos en la validación básica
+            if ((decimal.TryParse(fleetmodel.Ancho.Replace(",", "."), out var ancho) && ancho < 0) ||
+                (decimal.TryParse(fleetmodel.Largo.Replace(",", "."), out var largo) && largo < 0) ||
+                (decimal.TryParse(fleetmodel.Alto.Replace(",", "."), out var alto) && alto < 0) ||
+                (decimal.TryParse(fleetmodel.CapacidadPeso.Replace(",", "."), out var peso) && peso < 0) ||
+                (decimal.TryParse(fleetmodel.CapacidadVolumen.Replace(",", "."), out var volumen) && volumen < 0))
+            {
+                TempData["ErrorMessageEditFleet"] = "No se permiten valores negativos.";
+                return View(fleetmodel);
+            }
+
+            // Validaciones básicas
+            if (fleetmodel.Estado < 0 || fleetmodel.Estado > 1)
+            {
+                TempData["ErrorMessageEditFleet"] = "Todos los campos obligatorios deben ser completados correctamente";
+                return View(fleetmodel);
+            }
+
+            //verifico que no exista vehiculo con esa patente
+
+            var fleetDb = _fleetService.retornarFleetModelConPatente(patente);
+
+            if (fleetDb == null)
+            {
+                TempData["ErrorMessageEditFleet"] = "Seleccione un vehiculo valido.";
+
+                return View(fleetmodel);
+            }
+
+
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessageEditFleet"] = "Ocurrio un error.";
+
+                return View(fleetmodel);
+            }
+
+            ResultadoOperacion resultado = _fleetService.UpdateFleet(fleetmodel);
+
+            if (!resultado.Exito)
+            {
+                TempData["ErrorMessageEditFleet"] = resultado.Mensaje;
+                return View(fleetmodel);
+            }
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion flota", nombreUsuario + " Edito el vehiculo con patente : " + patente, ipAddress);
+
+            TempData["MensajeExito"] = resultado.Mensaje;
+            return View(fleetmodel);
+        }
+
+
+
+        [HttpGet("DeleteFleetGeneral/{patente}")]
+        public IActionResult DeleteFleetGeneral(string patente)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.patente = patente;
+
+            return View();
+        }
+
+        [HttpPost("DeleteFleetGeneral/{patente}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteFleetGeneral(string eleccion, string patente)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.patente = patente;
+
+
+            if (eleccion == "no")
+            {
+                TempData["ErrorMessageDeleteFleet"] = "Ocurrio un error.";
+
+                return View();
+            }
+
+            var flotaDb = _fleetService.retornarFleetModelConPatente(patente);
+
+            if (flotaDb == null)
+            {
+                TempData["ErrorMessageDeleteFleet"] = "El vehiculo no existe.";
+                return View();
+            }
+
+
+            var resultado = _fleetService.EliminarFleet(patente);
+
+
+            if (!resultado.Exito)
+            {
+                // Mostrar error en la misma vista
+                TempData["ErrorMessageDeleteFleet"] = $"Error al eliminar vehiculo: {resultado.Mensaje}";
+            }
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion flota", nombreUsuario + " Elimino el vehiculo con patente: " + patente, ipAddress);
+
+            TempData["SuccessDeleteMessage"] = $"Vehiculo con patente '{patente}' eliminado correctamente";
+
+            return View();
+        }
+
+
+
         [HttpGet]
         public IActionResult SystemLogs(int cantLogs = 10, string columna = "FechaHora", string orden = "desc", string? detalle = null)
         {

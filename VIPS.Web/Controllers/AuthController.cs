@@ -72,7 +72,7 @@ namespace VIPS.Web.Controllers
                                 u.fechaUltimoIntentoFallido, u.intentosFallidosLogin, u.idiomaInterfaz
                                 FROM Usuario u 
                                 INNER JOIN Rol r ON r.idRol = u.idRol 
-                                WHERE u.usuario = @usuario";
+                                WHERE u.usuario = @usuario and eliminado = 0";
 
                 using var conn = new SqlConnection(_connectionString);
                 using var command = new SqlCommand(query, conn);
@@ -129,6 +129,7 @@ namespace VIPS.Web.Controllers
                             "adminGeneral" => RedirectToAction("Index", "AdminGeneral"),
                             "adminLogistico" => RedirectToAction("Index", "AdminLogistico"),
                             "adminVentas" => RedirectToAction("Index", "AdminVentas"),
+                            "conductor" => RedirectToAction("Index", "Conductor"),
                             _ => RedirectToAction("Login", "Auth")
                         };
                     }
@@ -316,6 +317,9 @@ namespace VIPS.Web.Controllers
             if (User.IsInRole("adminVentas"))
                 return RedirectToAction("MyAccount", "AdminVentas");
 
+            if (User.IsInRole("conductor"))
+                return RedirectToAction("MyAccount", "Conductor");
+
             // fallback
             return RedirectToAction("Login", "Auth");
         }
@@ -342,7 +346,7 @@ namespace VIPS.Web.Controllers
         {
             string query = @"SELECT intentosFallidosLogin, fechaUltimoIntentoFallido 
                             FROM Usuario 
-                            WHERE usuario = @usuario";
+                            WHERE usuario = @usuario and eliminado = 0";
 
             using var conn = new SqlConnection(_connectionString);
             using var command = new SqlCommand(query, conn);
@@ -427,7 +431,7 @@ namespace VIPS.Web.Controllers
         {
             string query = @"SELECT intentosFallidosLogin 
                             FROM Usuario 
-                            WHERE usuario = @usuario";
+                            WHERE usuario = @usuario and eliminado = 0";
 
             using var conn = new SqlConnection(_connectionString);
             using var command = new SqlCommand(query, conn);

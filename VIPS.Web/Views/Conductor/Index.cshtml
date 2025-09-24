@@ -1,0 +1,116 @@
+﻿@{
+    Layout = "_ConductorLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+
+<div class="main-content">
+    <div class="route-header">
+        <div class="route-title">📱 @(lang == "es" ? "Mis Rutas" : "My Routes")</div>
+
+        <div class="route-info">
+            <div class="info-item">
+                <span class="info-label">@(lang == "es" ? "Ruta" : "Route")</span>
+                <span class="info-value">#12 – @(lang == "es" ? "Camión" : "Truck") 4</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">@(lang == "es" ? "Fecha" : "Date")</span>
+                <span class="info-value">23/09/2025</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">@(lang == "es" ? "Pedidos" : "Orders")</span>
+                <span class="info-value">15</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">@(lang == "es" ? "Estado" : "Status")</span>
+                <span class="status-badge status-en-curso">@(lang == "es" ? "En curso" : "In progress")</span>
+            </div>
+        </div>
+
+        <button class="map-button">🗺️ @(lang == "es" ? "Ver mapa completo" : "View full map")</button>
+    </div>
+
+    <div class="orders-section">
+        <div class="orders-title">@(lang == "es" ? "Lista de pedidos (orden ascendente)" : "Order list (ascending order)")</div>
+
+        <div class="order-item">
+            <div class="order-header" onclick="toggleDetails(1)">
+                <div class="order-number">1</div>
+                <div class="order-status status-pendiente">@(lang == "es" ? "Pendiente" : "Pending")</div>
+                <div class="order-info">
+                    <div class="order-address">Av. Rivadavia 4521</div>
+                    <div class="order-client">@(lang == "es" ? "Cliente" : "Client"): Juan Pérez</div>
+                </div>
+                <div class="expand-icon" id="icon-1">▼</div>
+            </div>
+            <div class="order-details" id="details-1">
+                <div class="detail-item">
+                    <span class="detail-label">@(lang == "es" ? "Tel" : "Phone"):</span>
+                    <span class="detail-value">1123456789</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">@(lang == "es" ? "Observaciones" : "Notes"):</span>
+                    <span class="detail-value">entregar en portería</span>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-entregado">✓ @(lang == "es" ? "Entregado" : "Delivered")</button>
+                    <button class="btn-fallido">✗ @(lang == "es" ? "Fallido" : "Failed")</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="order-item">
+            <div class="order-header" onclick="toggleDetails(2)">
+                <div class="order-number">2</div>
+                <div class="order-status status-pendiente">@(lang == "es" ? "Pendiente" : "Pending")</div>
+                <div class="order-info">
+                    <div class="order-address">Calle San Martín 2350</div>
+                    <div class="order-client">@(lang == "es" ? "Cliente" : "Client"): María López</div>
+                </div>
+                <div class="expand-icon" id="icon-2">▼</div>
+            </div>
+            <div class="order-details" id="details-2">
+                <div class="detail-item">
+                    <span class="detail-label">@(lang == "es" ? "Info adicional" : "Additional info"):</span>
+                    <span class="detail-value">Timbre 3°B</span>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-entregado">✓ @(lang == "es" ? "Entregado" : "Delivered")</button>
+                    <button class="btn-fallido">✗ @(lang == "es" ? "Fallido" : "Failed")</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="order-item">
+            <div class="order-header" onclick="toggleDetails(3)">
+                <div class="order-number">3</div>
+                <div class="order-status status-entregado">@(lang == "es" ? "Entregado" : "Delivered")</div>
+                <div class="order-info">
+                    <div class="order-address">Av. Corrientes 1500</div>
+                    <div class="order-client">@(lang == "es" ? "Cliente" : "Client"): Pedro González</div>
+                </div>
+                <div class="expand-icon" id="icon-3">▼</div>
+            </div>
+            <div class="order-details" id="details-3">
+                <div class="detail-item">
+                    <span class="detail-label">@(lang == "es" ? "Info adicional" : "Additional info"):</span>
+                    <span class="detail-value">Local "Kiosco Azul"</span>
+                </div>
+                <div class="detail-item" style="color: #10b981; font-weight: 500;">
+                    ✓ @(lang == "es" ? "Entregado exitosamente" : "Successfully delivered")
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-footer">
+        <div class="progress-info">
+            @(lang == "es" ? "Pedidos completados" : "Completed orders"): <span class="progress-count">1/15</span>
+        </div>
+        <button class="finalize-button">@(lang == "es" ? "Finalizar ruta" : "Finish route")</button>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/app.js"></script>
+}

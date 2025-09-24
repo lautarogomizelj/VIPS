@@ -1,0 +1,44 @@
+@{
+    Layout = "_AdminLayout";
+    string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+<form asp-action="DeleteFleetGeneral" asp-controller="AdminGeneral" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Eliminar vehiculo" : "Delet Fleet")</h3>
+    @Html.AntiForgeryToken()
+
+    @if (TempData["ErrorMessageDeleteFleet"] != null)
+   {
+    <div class="alert alert-danger">
+        <p class="error">@TempData["ErrorMessageDeleteFleet"]</p>
+    </div>
+   }
+
+    @if (TempData["SuccessDeleteMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <p class="exito">@TempData["SuccessDeleteMessage"]</p>
+    </div>
+   }
+
+    <input type="hidden" value="@ViewBag.patente" name="patente" />
+
+    <div class="row">
+        <label for="eleccion">
+            @(lang == "es"
+                ? "Desea eliminar el vehiculo con patente: " + ViewBag.patente
+                : "You wish to delete fleet with id vehicle: " + ViewBag.patente)
+        </label>
+
+        <select name="eleccion">
+            <option value="si">Si</option>
+            <option value="no">No</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn-principal">@((lang == "es") ? "Confirmar cambios" : "Confirm Changes")</button>
+    <a class="restablecer" asp-controller="AdminGeneral" asp-action="FleetManagement">@((lang == "es") ? "Volver" : "Back")</a>
+
+
+
+</form>

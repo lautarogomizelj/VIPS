@@ -69,6 +69,8 @@
     </div>
 
     <table>
+        <thead>
+
         <tr>
             <th>@(lang == "es" ? "ID Log" : "Log ID")</th>
             <th>@(lang == "es" ? "Usuario" : "User")</th>
@@ -76,6 +78,10 @@
             <th>@(lang == "es" ? "Acción" : "Action")</th>
             <th>@(lang == "es" ? "Detalle" : "Details")</th>
         </tr>
+
+        </thead>
+
+        <tbody>
 
         @foreach (var log in Model)
     {
@@ -87,4 +93,5 @@
             <td>@log.Detalle</td>
         </tr>
     }
+        </tbody>
     </table>

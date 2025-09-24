@@ -400,7 +400,7 @@ namespace VIPS.Web.Services
 
         public async Task ActualizarPassword(int idUsuario, string contraseniaHash)
         {
-            string query = @"UPDATE Usuario SET contraseniaHash = @contraseniaHash WHERE idUsuario = @idUsuario";
+            string query = @"UPDATE Usuario SET contraseniaHash = @contraseniaHash WHERE idUsuario = @idUsuario and eliminado = 0";
 
             using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
             using var command = new SqlCommand(query, conn);
