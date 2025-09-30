@@ -33,7 +33,7 @@
 
         @if (TempData["SuccessMessageChange"] != null)
         {
-        <div class="alert alert-danger">
+        <div class="alert alert-success">
             <p style="color:green;">✅ @TempData["SuccessMessageChange"]</p>
         </div>
         }
@@ -83,7 +83,7 @@
 
             @if (TempData["SuccessMessageChangeLanguage"] != null)
             {
-            <div class="alert alert-danger">
+            <div class="alert alert-success">
                 <p style="color:green;">✅ @TempData["SuccessMessageChangeLanguage"]</p>
             </div>
 
@@ -98,4 +98,70 @@
 
         </form>
     </div>
+
+    <!-- Card de Punto de Partida -->
+    <div class="settings-card">
+        <h3 class="card-title">
+            🚛 @(lang == "es" ? "Punto de Partida de Camiones" : "Truck Departure Point")
+        </h3>
+        <p class="card-description">
+            @(lang == "es" ? "Define la dirección de origen desde donde partirán los camiones para optimizar las rutas de entrega." : "Define the origin address from where trucks will depart to optimize delivery routes.")
+        </p>
+        <div class="current-language">
+            📍 @(lang == "es" ? "Dirección actual" : "Current address"): <strong>@(ViewBag.PuntoPartidaActual ?? (lang == "es" ? "No definida" : "Not defined"))</strong>
+        </div>
+        <form asp-controller="AdminLogistico" asp-action="GuardarPuntoPartida" method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label for="DomicilioPartida" class="form-label">
+                    @(lang == "es" ? "Dirección de partida" : "Departure address")
+                </label>
+                <input type="text"
+                       id="DomicilioPartida"
+                       name="DomicilioPartida"
+                       class="form-select"
+                       placeholder="@(lang == "es" ? "Ej: Luis Maria Campos 1149" : "Ex: 123 Main St")"
+                       required>
+            </div>
+            <div class="form-group">
+                <label for="CiudadPartida" class="form-label">
+                    @(lang == "es" ? "Ciudad" : "City")
+                </label>
+                <input type="text"
+                       id="CiudadPartida"
+                       name="CiudadPartida"
+                       class="form-select"
+                       placeholder="@(lang == "es" ? "Ej: Buenos Aires" : "Ex: New York")"
+                       required>
+            </div>
+            <div class="form-group">
+                <label for="ProvinciaPartida" class="form-label">
+                    @(lang == "es" ? "Provincia" : "Province/State")
+                </label>
+                <input type="text"
+                       id="ProvinciaPartida"
+                       name="ProvinciaPartida"
+                       class="form-select"
+                       placeholder="@(lang == "es" ? "Ej: Buenos Aires" : "Ex: New York")"
+                       required>
+            </div>
+            <button type="submit" class="btn-secondary">
+                💾 @(lang == "es" ? "Guardar Punto de Partida" : "Save Departure Point")
+            </button>
+            <!-- Mensajes de punto de partida -->
+            @if (TempData["SuccessMessageDeparturePoint"] != null)
+        {
+            <div class="alert alert-success">
+                <p style="color:green;">✅ @TempData["SuccessMessageDeparturePoint"]</p>
+            </div>
+        }
+            @if (TempData["ErrorMessageDeparturePoint"] != null)
+        {
+            <div class="alert alert-danger">
+                <p style="color:red;">❌ @TempData["ErrorMessageDeparturePoint"]</p>
+            </div>
+        }
+        </form>
+    </div>
+
 </div>

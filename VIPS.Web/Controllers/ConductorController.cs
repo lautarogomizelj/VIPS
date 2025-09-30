@@ -11,6 +11,7 @@ using System.Reflection.Metadata;
 using PdfSharpCore.Pdf;
 using PdfSharpCore.Drawing;
 using System.IO;
+using System.Text;
 
 
 
@@ -27,11 +28,13 @@ namespace VIPS.Web.Controllers
         private readonly ClientService _clientService;
         private readonly OrderService _orderService;
         private readonly FleetService _fleetService;
+        private readonly RouteService _routeService;
 
 
 
 
-        public ConductorController(IConfiguration configuration, IHashService hashService, LogService logService, ClientService clientService, OrderService orderService, UserService userService, FleetService fleetService)
+
+        public ConductorController(IConfiguration configuration, IHashService hashService, LogService logService, ClientService clientService, OrderService orderService, UserService userService, FleetService fleetService, RouteService routeService)
         {
             _configuration = configuration;
             _hashService = hashService;
@@ -40,10 +43,41 @@ namespace VIPS.Web.Controllers
             _logService = logService;
             _orderService = orderService;
             _fleetService = fleetService;
+            _routeService = routeService;
 
         }
 
-        public IActionResult Index()
+        [HttpGet("ExportarRutaAGpxConductor/{idRuta}")]
+        public async Task<IActionResult> ExportarRutaAGpxConductor(string idRuta)
+        {
+            var puntoPartida = _routeService.obtenerPuntoPartidaActual();
+
+            var pedidos = await _orderService.ObtenerPedidosPorIdRutaAsync(idRuta);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>");
+            sb.AppendLine("<gpx version=\"1.1\" creator=\"VIPS\" xmlns=\"http://www.topografix.com/GPX/1/1\">");
+
+            // Punto de partida
+            sb.AppendLine($"  <wpt lat=\"{puntoPartida.Latitud}\" lon=\"{puntoPartida.Longitud}\">");
+            sb.AppendLine("    <name>Punto de Partida</name>");
+            sb.AppendLine("  </wpt>");
+
+            // Waypoints de pedidos
+            foreach (var pedido in pedidos)
+            {
+                sb.AppendLine($"  <wpt lat=\"{pedido.Latitud}\" lon=\"{pedido.Longitud}\">");
+                sb.AppendLine($"    <name>Pedido {pedido.IdPedido} - {pedido.Direccion}</name>");
+                sb.AppendLine("  </wpt>");
+            }
+
+            sb.AppendLine("</gpx>");
+
+            var gpxBytes = Encoding.UTF8.GetBytes(sb.ToString());
+            return File(gpxBytes, "application/gpx+xml", "ruta_logistica.gpx");
+        }
+
+        public async Task<IActionResult> Index()
         {
             // Leer claims desde la cookie
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
@@ -53,7 +87,14 @@ namespace VIPS.Web.Controllers
             ViewBag.NombreUsuario = nombreUsuario;
             ViewBag.RolUsuario = rolUsuario;
 
-            return View();
+            var puntoPartida = _routeService.obtenerPuntoPartidaActual();
+            ViewBag.PuntoPartidaActual = puntoPartida.Direccion;
+
+            ViewBag.Pedidos = await _orderService.ObtenerPedidosPorNombreUsuarioAsync(nombreUsuario);
+
+            var rutas = await _routeService.RetornarRutaConNombreUsuario(nombreUsuario);
+
+            return View(rutas);
         }
 
         public IActionResult MyAccount()
@@ -68,7 +109,6 @@ namespace VIPS.Web.Controllers
 
             return View();
         }
-
 
         [HttpPost]
         public async Task<IActionResult> CambiarIdioma(string nuevoLang)
@@ -123,6 +163,83 @@ namespace VIPS.Web.Controllers
 
             return RedirectToAction("MyAccount");
         }
+
+
+
+        public async Task<IActionResult> IniciarRuta(string idRuta)
+        {
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var resultado = await _routeService.IniciarRutaAsync(idRuta);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+
+            if (resultado.Exito)
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Inicio de ruta", resultado.Mensaje, ipAddress);
+                TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
+
+            }
+            else
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Inicio de ruta", resultado.Mensaje, ipAddress);
+                TempData["ErrorMessageConductorRuta"] = resultado.Mensaje;
+            }
+
+
+
+            return RedirectToAction("Index");
+        }
+
+        public async Task<IActionResult> FinalizarRuta()
+        {
+            return RedirectToAction("Index");
+
+        }
+
+        public async Task<IActionResult> MarcarEntregaEntregada(string idPedido, string idRuta)
+        {
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var resultado = _routeService.MarcarEntregaEntregada(idPedido);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+
+            if (resultado.Exito)
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de pedido en ruta", resultado.Mensaje, ipAddress);
+                TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
+            }
+            else
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de pedido en ruta", resultado.Mensaje, ipAddress);
+                TempData["ErrorMessageConductorRuta"] = resultado.Mensaje;
+            }
+
+            return RedirectToAction("Index");
+
+        }
+
+        public async Task<IActionResult> MarcarEntregaFallida(string idPedido, string idRuta)
+        {
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var resultado = _routeService.MarcarEntregaFallida(idPedido);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+
+            if (resultado.Exito)
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de pedido en ruta", resultado.Mensaje, ipAddress);
+                TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
+            }
+            else
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de pedido en ruta", resultado.Mensaje, ipAddress);
+                TempData["ErrorMessageConductorRuta"] = resultado.Mensaje;
+            }
+
+            return RedirectToAction("Index");
+
+        }
+
+
+
+
 
 
 

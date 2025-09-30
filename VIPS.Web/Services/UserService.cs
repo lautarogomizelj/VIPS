@@ -588,7 +588,40 @@ namespace VIPS.Web.Services
         }
 
 
-      
+
+        public async Task<List<ConductorDisponible>> ObtenerConductoresDisponiblesAsync()
+        {
+            try
+            {
+                var conductores = new List<ConductorDisponible>();
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                await connection.OpenAsync();
+
+                var query = "select idUsuario, nombre + ' ' + apellido as nombreCompleto  FROM Usuario WHERE eliminado = 0 and idRol = (select idRol from Rol where nombre = 'conductor') and idUsuario not in (select idUsuario from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where er.descripcion NOT IN ('Cancelada','Finalizada') AND r.idUsuario IS NOT NULL ) ORDER BY nombre, apellido";
+
+                using var cmd = new SqlCommand(query, connection);
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    conductores.Add(new ConductorDisponible
+                    {
+                        IdConductor = reader.GetInt32(reader.GetOrdinal("idUsuario")),
+                        Nombre = reader.GetString(reader.GetOrdinal("nombreCompleto")),
+                    });
+                }
+
+                return conductores;
+            }
+            catch(Exception e)
+            {
+                return new List<ConductorDisponible>();
+            }
+        }
+
+
+
 
 
     }

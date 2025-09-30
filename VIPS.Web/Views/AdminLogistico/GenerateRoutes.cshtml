@@ -1,0 +1,119 @@
+﻿@model ResultadoOperacionRuta
+
+@{
+	 Layout = "_AdminLogisticoLayout";
+	 string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+
+<div class="contenedorResultadoRutas">
+
+    <!-- Pantalla de Carga -->
+    <div class="result-container" id="loading-screen">
+        <div class="status-icon loading">
+            ⚙️
+        </div>
+        <h1 class="result-title loading">
+            @(lang == "es" ? "Generando Rutas" : "Generating Routes")
+        </h1>
+        <p class="result-message">
+            @(lang == "es" ? "Procesando pedidos y optimizando rutas de entrega" : "Processing orders and optimizing delivery routes")
+            <span class="loading-dots">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </span>
+        </p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+        <div class="result-details loading">
+            <div class="detail-item">
+                <span class="detail-label">@(lang == "es" ? "Estado:" : "Status:"):</span>
+                <span class="detail-value">@(lang == "es" ? "Procesando..." : "Processing...")</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">@(lang == "es" ? "Progreso:" : "Progress:"):</span>
+                <span class="detail-value" id="progress-text">0%</span>
+            </div>
+        </div>
+    </div>
+
+
+    @if (Model.Exito)
+    {
+
+        <!-- Pantalla de Éxito -->
+    <div class="result-container" id="success-screen" style="display:none;">
+        <div class="status-icon success">
+            ✅
+        </div>
+        <h1 class="result-title success">¡Rutas Generadas Exitosamente!</h1>
+        <p class="result-message">
+            El sistema ha procesado todos los pedidos y generado las rutas óptimas para tu flota.
+        </p>
+        <div class="result-details success">
+            <div class="detail-item">
+                <span class="detail-label">Rutas generadas:</span>
+                <span class="detail-value success">@Model.CantidadRutasGeneradas rutas</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Pedidos procesados:</span>
+                <span class="detail-value success">@Model.CantidadPedidos pedidos</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Vehículos asignados:</span>
+                <span class="detail-value success">@Model.CantidadVehiculos camiones</span>
+            </div>
+        </div>
+        <div class="actions">
+            <a asp-action="AssignDriver" asp-controller="AdminLogistico" class="btn btn-primary">
+                🗺️ Ver Rutas Generadas
+            </a>
+            <a asp-action="RouteManagement" asp-controller="AdminLogistico" class="btn btn-secondary">
+                ← Volver al Panel
+            </a>
+        </div>
+    </div>
+    }else
+    {
+ <!-- Pantalla de Error -->
+    <div class="result-container" id="error-screen" style="display:none;">
+        <div class="status-icon error">
+            ❌
+        </div>
+        <h1 class="result-title error">Error al Generar Rutas</h1>
+        <p class="result-message">
+            Ha ocurrido un problema durante la generación de rutas. Por favor, revisa los detalles e intenta nuevamente.
+        </p>
+        <div class="result-details error">
+            <div class="detail-item">
+                <span class="detail-label">Código de error:</span>
+                <span class="detail-value error">@Model.CodigoError</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Descripción:</span>
+                <span class="detail-value">@Model.Mensaje</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Pedidos pendientes:</span>
+                <span class="detail-value error">@Model.CantidadPedidosPendientes pedidos</span>
+            </div>
+        </div>
+        <div class="actions">
+            <a asp-action="FleetManagement" asp-controller="AdminLogistico" class="btn btn-success">
+                🚛 Gestionar Flota
+            </a>
+            <a asp-action="RouteManagement" asp-controller="AdminLogistico" class="btn btn-secondary">
+                ← Volver al Panel
+            </a>
+        </div>
+    </div>
+    }
+
+</div>
+
+
+@section Scripts {
+    <script src="~/js/app.js"></script>
+}

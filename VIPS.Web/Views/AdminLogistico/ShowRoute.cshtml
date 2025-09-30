@@ -1,0 +1,133 @@
+﻿@model VIPS.Web.Models.RouteViewModel
+
+@{
+	 Layout = "_AdminLogisticoLayout";
+	 string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+
+<div class="contenedorGestionRutas">
+
+    <div class="route-cards">
+
+        <div class="route-card">
+            <!-- Sección 1: Detalles de la ruta -->
+            <div class="section">
+                <h3 class="section-title">
+                    📋 Detalles de la Ruta
+                </h3>
+                <div class="table-container">
+                    <table>
+                        <thead class="table-header">
+                            <tr>
+                                <th>@(lang == "es" ? "ID Ruta" : "Route ID")</th>
+                                <th>@(lang == "es" ? "Patente" : "License Plate")</th>
+                                <th>@(lang == "es" ? "Conductor" : "Driver")</th>
+                                <th>@(lang == "es" ? "Fecha Creación" : "Creation Date")</th>
+                                <th>@(lang == "es" ? "Cantidad Pedidos" : "Order Quantity")</th>
+                                <th>@(lang == "es" ? "Estado" : "Status")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="id-badge">@Model.IdRuta.ToString("D3")</span></td>
+                                <td><span class="patent-code">@Model.Patente</span></td>
+                                <td><span class="">@Model.NombreCompletoConductor</span></td>
+                                <td>@Model.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                <td><span class="count-badge">@Model.CantPedidos</span></td>
+
+                                <td>
+                                    <span class="route-status @(
+    Model.Estado== "Pendiente" ? "status-pending" :
+    Model.Estado== "En camino" ? "status-en-camino" :
+    Model.Estado== "Finalizada" ? "status-finalizada" :
+    Model.Estado== "Cancelada" ? "status-cancelada" :
+    Model.Estado== "Sin Asignar" ? "status-entregado" : "status-sin-asignar")">
+                                        @Model.Estado
+                                    </span>
+                                </td>
+
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sección 2: Pedidos asignados -->
+            <div class="section">
+                <h3 class="section-title">
+                    @(lang == "es" ? "📦 Pedidos Asignados (Orden de Entrega)" : "📦 Order list (delivery order)")
+                </h3>
+                <div class="orders-list">
+
+                    @{
+                        var url = "https://www.google.com/maps/dir/";
+
+                        // Agrego el punto de partida primero
+                        if (ViewBag.PuntoPartidaActual != null)
+                        {
+                            url += Uri.EscapeDataString(ViewBag.PuntoPartidaActual) + "/";
+                        }
+
+                        // Luego agrego todos los pedidos
+                        foreach (var pedido in ViewBag.Pedidos)
+                        {
+                            url += Uri.EscapeDataString(pedido.Direccion) + "/";
+                        }
+                    }
+
+
+                    @foreach (var pedido in ViewBag.Pedidos)
+                    {
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-id">PED-@pedido.IdPedido.ToString("D3")</span>
+                            <span class="delivery-order">@pedido.OrdenEntrega º Entrega</span>
+                        </div>
+                        <div class="order-details ">
+                            <div class="client-info">
+                                <h4>@pedido.Cliente</h4>
+                            </div>
+                            <div class="address-info">
+                                📍 @pedido.Direccion
+                            </div>
+
+                            <div class="status">
+                                <span class="route-status @(
+    pedido.Estado == "Pendiente" ? "status-pending" :
+    pedido.Estado == "Programado" ? "status-programado" :
+    pedido.Estado == "Reprogramado" ? "status-reprogramado" :
+    pedido.Estado == "En Camino" ? "status-en-camino-pedido" :
+    pedido.Estado == "Fallido" ? "status-fallido" :
+    pedido.Estado == "Entregado" ? "status-entregado" :
+    "status-pending")">
+                                    @pedido.Estado
+                                </span>
+                            </div>
+
+                        </div>
+                    </div>
+                    }
+
+
+
+                </div>
+            </div>
+
+
+            <div class="actions">
+                <a asp-action="RouteManagement" asp-controller="AdminLogistico" class="btn btn-secondary">
+                    ← Volver al Panel
+                </a>
+
+                <a href="@url" target="_blank" class="btn btn-primary map">
+                    🗺️ Ver ruta
+                </a>
+
+                <a asp-action="ExportarRutaAGpx" asp-controller="AdminLogistico" asp-route-idRuta="Model.IdRuta" class="btn btn-primary">
+                    📡 Exportar a gpx
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

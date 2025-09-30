@@ -11,6 +11,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Logistico Panel - VIPS</title>
     <link rel="stylesheet" href="~/css/main.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/gestionRuta.css" asp-append-version="true" />
+
     <link rel="shortcut icon" href="~/images/logo.png" />
 </head>
 <body>
@@ -89,6 +91,12 @@
                 <li class="@(currentAction == "RouteManagement" ? "active" : "")">
                     <a asp-controller="AdminLogistico" asp-action="RouteManagement">
                         <h3>@(lang == "es" ? "Gestión de rutas" : "Route Management")</h3>
+                    </a>
+                </li>
+
+                <li class="@(currentAction == "AssignDriver" ? "active" : "")">
+                    <a asp-controller="AdminLogistico" asp-action="AssignDriver">
+                        <h3>@(lang == "es" ? "Asginacion de conductor" : "Assign driver")</h3>
                     </a>
                 </li>
 

@@ -1,8 +1,8 @@
-using System;
+Ôªøusing System;
 using System.Collections.Generic;         // Para List<T>
 using System.Data;                        // Para DataTable, DataRow
 using System.Globalization;               // Para CultureInfo
-using System.IO;                          // Para MemoryStream (si us·s PDFs)
+using System.IO;                          // Para MemoryStream (si us√°s PDFs)
 using System.Linq;                         // Para .Contains y otras operaciones LINQ
 using System.Text;
 using Microsoft.Data.SqlClient;
@@ -43,7 +43,7 @@ namespace VIPS.Web.Services
             var results = JArray.Parse(response);
 
             if (results.Count == 0)
-                throw new Exception("No se encontraron resultados para la direcciÛn.");
+                throw new Exception("No se encontraron resultados para la direcci√≥n.");
 
             var first = results[0];
             double lat = double.Parse(first["lat"].ToString(), System.Globalization.CultureInfo.InvariantCulture);
@@ -135,14 +135,151 @@ namespace VIPS.Web.Services
                     };
                 }
 
-                return null; // No encontrÛ pedido
+                return null; // No encontr√≥ pedido
             }
             catch (Exception)
             {
-                return null; // Manejar excepciÛn seg˙n convenga
+                return null; // Manejar excepci√≥n seg√∫n convenga
             }
         }
 
+        public async Task<Dictionary<int, List<PedidoRuta>>> ObtenerPedidosPorRutaAsync()
+        {
+            try
+            {
+                var result = new Dictionary<int, List<PedidoRuta>>();
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                await connection.OpenAsync();
+
+                var query = "SELECT  rp.idRuta, p.idPedido, c.nombre + ' ' + c.apellido as cliente, de.direccion, rp.ordenEntrega FROM RutaPedidos rp INNER JOIN Pedido p ON rp.idPedido = p.idPedido INNER JOIN Cliente c ON p.idCliente = c.idCliente INNER JOIN DomicilioEntrega de on de.idDomicilioEntrega = p.idDomicilioEntrega WHERE rp.eliminado = 0 AND rp.idRuta in (select idRuta from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where er.descripcion = 'Sin Asignar') ORDER BY rp.idRuta, rp.ordenEntrega\r\n";
+
+                using var cmd = new SqlCommand(query, connection);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var idRutaDb = reader.GetInt32(reader.GetOrdinal("idRuta"));
+
+                    var pedido = new PedidoRuta
+                    {
+                        IdPedido = reader.GetInt32(reader.GetOrdinal("idPedido")),
+                        Cliente = reader.GetString(reader.GetOrdinal("cliente")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        OrdenEntrega = reader.GetInt32(reader.GetOrdinal("ordenEntrega"))
+                    };
+
+                    if (!result.ContainsKey(idRutaDb))
+                    {
+                        result[idRutaDb] = new List<PedidoRuta>();
+                    }
+
+                    result[idRutaDb].Add(pedido);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en ObtenerPedidosPorRutaAsync: {ex.Message}");
+                return new Dictionary<int, List<PedidoRuta>>(); // devuelve vac√≠o
+            }
+        }
+
+        public async Task<List<PedidoRuta>> ObtenerPedidosPorIdRutaAsync(string idRuta)
+        {
+            try
+            {
+                var result = new List<PedidoRuta>();
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                await connection.OpenAsync();
+
+                var query = "SELECT rp.idRuta, p.idPedido, c.nombre + ' ' + c.apellido as cliente, de.direccion, rp.ordenEntrega, de.latitud, de.longitud, ep.descripcion as estado FROM RutaPedidos rp INNER JOIN Pedido p ON rp.idPedido = p.idPedido INNER JOIN Cliente c ON p.idCliente = c.idCliente INNER JOIN DomicilioEntrega de on de.idDomicilioEntrega = p.idDomicilioEntrega INNER JOIN EstadoPedido ep on ep.idEstado = p.idEstadoPedido WHERE rp.eliminado = 0 AND rp.idRuta = @idRuta ORDER BY rp.idRuta, rp.ordenEntrega";
+
+                using var cmd = new SqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("@idRuta", idRuta);
+
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var idRutaDb = reader.GetInt32(reader.GetOrdinal("idRuta"));
+
+                    var pedido = new PedidoRuta
+                    {
+                        IdPedido = reader.GetInt32(reader.GetOrdinal("idPedido")),
+                        Cliente = reader.GetString(reader.GetOrdinal("cliente")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        OrdenEntrega = reader.GetInt32(reader.GetOrdinal("ordenEntrega")),
+                        Latitud = reader.GetDecimal(reader.GetOrdinal("latitud")),
+                        Longitud = reader.GetDecimal(reader.GetOrdinal("longitud")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+
+                    };
+
+
+                    result.Add(pedido);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en ObtenerPedidosPorIdRutaAsync: {ex.Message}");
+                return new List<PedidoRuta>(); // devuelve vac√≠o
+            }
+        }
+
+        public async Task<List<PedidoRuta>> ObtenerPedidosPorNombreUsuarioAsync(string nombreUsuario)
+        {
+            try
+            {
+                var result = new List<PedidoRuta>();
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                await connection.OpenAsync();
+
+                var query = "SELECT rp.idRuta, p.idPedido, c.nombre + ' ' + c.apellido AS cliente, de.direccion, rp.ordenEntrega, de.latitud, de.longitud, ep.descripcion AS estado, c.telefono, agg.cantTotal, agg.cantCompletados FROM RutaPedidos rp INNER JOIN Pedido p ON rp.idPedido = p.idPedido INNER JOIN Cliente c ON p.idCliente = c.idCliente INNER JOIN DomicilioEntrega de ON de.idDomicilioEntrega = p.idDomicilioEntrega INNER JOIN Ruta r ON r.idRuta = rp.idRuta INNER JOIN EstadoRuta er ON er.idEstadoRuta = r.idEstadoRuta INNER JOIN Usuario u ON r.idUsuario = u.idUsuario INNER JOIN EstadoPedido ep ON ep.idEstado = p.idEstadoPedido INNER JOIN (SELECT rp2.idRuta, COUNT(*) AS cantTotal, SUM(CASE WHEN ep2.descripcion = 'Entregado' THEN 1 ELSE 0 END) AS cantCompletados FROM RutaPedidos rp2 INNER JOIN Pedido p2 ON rp2.idPedido = p2.idPedido INNER JOIN EstadoPedido ep2 ON ep2.idEstado = p2.idEstadoPedido GROUP BY rp2.idRuta) agg ON agg.idRuta = rp.idRuta WHERE er.descripcion NOT IN ('Finalizada','Cancelada') AND u.usuario = @usuario ORDER BY rp.idRuta, rp.ordenEntrega;";
+
+                using var cmd = new SqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("@usuario", nombreUsuario);
+
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var pedido = new PedidoRuta
+                    {
+                        IdPedido = reader.GetInt32(reader.GetOrdinal("idPedido")),
+                        Cliente = reader.GetString(reader.GetOrdinal("cliente")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        OrdenEntrega = reader.GetInt32(reader.GetOrdinal("ordenEntrega")),
+                        Latitud = reader.GetDecimal(reader.GetOrdinal("latitud")),
+                        Longitud = reader.GetDecimal(reader.GetOrdinal("longitud")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado")),
+                        TelefonoCliente = reader.GetString(reader.GetOrdinal("telefono")),
+                        CantCompletados = reader.GetInt32(reader.GetOrdinal("cantCompletados")),
+                        CantTotal= reader.GetInt32(reader.GetOrdinal("cantTotal"))
+
+
+                    };
+
+
+                    result.Add(pedido);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en ObtenerPedidosPorIdRutaAsync: {ex.Message}");
+                return new List<PedidoRuta>(); // devuelve vac√≠o
+            }
+        }
 
         public ResultadoOperacion EliminarPedido(int idPedido)
         {
@@ -165,7 +302,7 @@ namespace VIPS.Web.Services
                     Exito = filas > 0,
                     Mensaje = filas > 0
                 ? "Pedido borrado correctamente"
-                : "No se borro ning˙n registro"
+                : "No se borro ning√∫n registro"
                 };
             }
             catch (SqlException ex)
@@ -190,7 +327,7 @@ namespace VIPS.Web.Services
         {
             try
             {
-                // 1. GeocodificaciÛn
+                // 1. Geocodificaci√≥n
                 var (lat, lon, postalCode) = await GeocodeAsync(model.DomicilioEntrega, model.Ciudad, model.Provincia);
 
                 // 2. Crear domicilio entrega
@@ -245,7 +382,7 @@ namespace VIPS.Web.Services
                     Exito = filas > 0,
                     Mensaje = filas > 0
                 ? "Pedido creado correctamente"
-                : "No se insertÛ ning˙n registro"
+                : "No se insert√≥ ning√∫n registro"
                 };
 
             }
@@ -270,13 +407,13 @@ namespace VIPS.Web.Services
         private decimal ConvertirStringADecimal(string numero, int cantDecimales)
         {
             if (string.IsNullOrWhiteSpace(numero))
-                throw new ArgumentException("El n˙mero no puede estar vacÌo.");
+                throw new ArgumentException("El n√∫mero no puede estar vac√≠o.");
 
             // Normalizo: si viene con punto lo convierto a coma
             var normalizado = numero.Replace(".", ",");
 
             if (!decimal.TryParse(normalizado, NumberStyles.Any, new CultureInfo("es-AR"), out var valor))
-                throw new FormatException($"El valor '{numero}' no es un n˙mero v·lido.");
+                throw new FormatException($"El valor '{numero}' no es un n√∫mero v√°lido.");
 
             // Redondeo a la cantidad de decimales deseada
             return Math.Round(valor, cantDecimales);
@@ -411,7 +548,7 @@ WHERE UPPER(direccion) = UPPER(@domicilio)
                 else
                 {
                     resultado.Exito = false;
-                    resultado.Mensaje = "No se encontrÛ el pedido para actualizar";
+                    resultado.Mensaje = "No se encontr√≥ el pedido para actualizar";
                 }
             }
             catch (Exception ex)
@@ -498,7 +635,7 @@ WHERE UPPER(direccion) = UPPER(@domicilio)
             {
                 var columnasPermitidas = new[] { "idPedido", "nombreCliente", "peso", "fechaCreacion", "fechaDespacho", "estadoPedido", "direccion"};
                 if (!columnasPermitidas.Contains(columna))
-                    throw new ArgumentException("Columna no v·lida");
+                    throw new ArgumentException("Columna no v√°lida");
 
 
                 string columnaDB = columna switch
@@ -537,7 +674,7 @@ WHERE UPPER(direccion) = UPPER(@domicilio)
 
                 if (!string.IsNullOrEmpty(parametro))
                 {
-                    // B˙squeda parcial
+                    // B√∫squeda parcial
                     cmd.Parameters.AddWithValue("@parametro", "%" + parametro + "%");
                 }
                 using var adapter = new SqlDataAdapter(cmd);
@@ -578,6 +715,81 @@ WHERE UPPER(direccion) = UPPER(@domicilio)
         }
 
 
+        public async Task<ResultadoOperacion> CambiarPuntoPartidaFlota(string DomicilioPartida, string CiudadPartida, string ProvinciaPartida)
+        {
+
+                var resultado = new ResultadoOperacion();
+            try
+            {
+
+                // 1. Geocodificaci√≥n
+                var (lat, lon, postalCode) = await GeocodeAsync(DomicilioPartida, CiudadPartida, ProvinciaPartida);
+
+                // 2. Crear domicilio entrega
+                var idDomicilioInicio = CrearDomicilioEntrega(DomicilioPartida, CiudadPartida, ProvinciaPartida, lat, lon, postalCode);
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                await connection.OpenAsync();
+
+
+              // 2Ô∏è Actualizar todos los veh√≠culos para que tengan este domicilio como punto de partida
+                var updateQuery = "UPDATE Flota SET idDomicilioInicio = @IdDomicilio";
+                using (var cmd = new SqlCommand(updateQuery, connection))
+                {
+                    cmd.Parameters.AddWithValue("@IdDomicilio", idDomicilioInicio);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                resultado.Exito = true;
+                resultado.Mensaje = "Se actualiz√≥ correctamente el punto de partida de la flota.";
+            }
+            catch (Exception ex)
+            {
+                resultado.Exito = false;
+                resultado.Mensaje = $"Error al actualizar el punto de partida: {ex.Message}";
+            }
+
+            return resultado;
+        }
+
+
+        public async Task<List<OrderRouteModel>> GetPedidosPendientesAsync()
+        {
+            try
+            {
+                var query = "select idPedido, ancho, largo, alto, peso, latitud, longitud from Pedido p inner join DomicilioEntrega d on d.idDomicilioEntrega = p.idDomicilioEntrega where p.eliminado = 0 and idEstadoPedido in (select idEstado from EstadoPedido where descripcion = 'Pendiente' or descripcion = 'Reprogramado')";
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                await connection.OpenAsync();
+
+                using var cmd = new SqlCommand(query, connection);
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                var lista = new List<OrderRouteModel>();
+
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new OrderRouteModel
+                    {
+                        IdPedido = reader.GetInt32(reader.GetOrdinal("idPedido")),
+                        Ancho = reader.GetDecimal(reader.GetOrdinal("ancho")),
+                        Largo = reader.GetDecimal(reader.GetOrdinal("largo")),
+                        Alto = reader.GetDecimal(reader.GetOrdinal("alto")),
+                        Peso = reader.GetDecimal(reader.GetOrdinal("peso")),
+                        Latitud = reader.GetDecimal(reader.GetOrdinal("latitud")),
+                        Longitud = reader.GetDecimal(reader.GetOrdinal("longitud"))
+                    });
+                }
+
+                return lista;
+            }
+            catch (Exception ex)
+            {
+                return new List<OrderRouteModel>();
+            }
+        }
+
+
         public byte[] ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc", string? parametro = null)
         {
             // Traer los pedidos ordenados
@@ -599,12 +811,12 @@ WHERE UPPER(direccion) = UPPER(@domicilio)
                 gfx.DrawString("ID Pedido", font, XBrushes.Black, new XRect(startX, startY, 60, rowHeight), XStringFormats.Center);
                 gfx.DrawString("NombreCliente", font, XBrushes.Black, new XRect(startX + 60, startY, 60, rowHeight), XStringFormats.Center);
                 gfx.DrawString("Peso (gr)", font, XBrushes.Black, new XRect(startX + 120, startY, 60, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Fecha CreaciÛn", font, XBrushes.Black, new XRect(startX + 180, startY, 80, rowHeight), XStringFormats.Center);
+                gfx.DrawString("Fecha Creaci√≥n", font, XBrushes.Black, new XRect(startX + 180, startY, 80, rowHeight), XStringFormats.Center);
                 gfx.DrawString("Fecha Despacho", font, XBrushes.Black, new XRect(startX + 260, startY, 80, rowHeight), XStringFormats.Center);
                 gfx.DrawString("Estado", font, XBrushes.Black, new XRect(startX + 340, startY, 80, rowHeight), XStringFormats.Center);
-                gfx.DrawString("DirecciÛn", font, XBrushes.Black, new XRect(startX + 420, startY, 120, rowHeight), XStringFormats.Center);
+                gfx.DrawString("Direcci√≥n", font, XBrushes.Black, new XRect(startX + 420, startY, 120, rowHeight), XStringFormats.Center);
 
-                // LÌnea debajo del encabezado
+                // L√≠nea debajo del encabezado
                 gfx.DrawLine(XPens.Black, startX, startY + rowHeight, startX + 540, startY + rowHeight);
 
                 // Dibujar filas
@@ -620,7 +832,7 @@ WHERE UPPER(direccion) = UPPER(@domicilio)
                     gfx.DrawString(pedido.EstadoPedido, font, XBrushes.Black, new XRect(startX + 340, y, 80, rowHeight), XStringFormats.Center);
                     gfx.DrawString(pedido.Direccion, font, XBrushes.Black, new XRect(startX + 420, y, 120, rowHeight), XStringFormats.Center);
 
-                    // LÌnea debajo de la fila
+                    // L√≠nea debajo de la fila
                     gfx.DrawLine(XPens.Gray, startX, y + rowHeight, startX + 540, y + rowHeight);
                 }
 

@@ -205,6 +205,9 @@ namespace VIPS.Web.Controllers
                 ViewBag.RolUsuario = rolUsuario;
                 ViewBag.NombreCliente = nombreCliente;
 
+                ViewBag.Columna = columna;
+                ViewBag.Orden = orden;
+
                 var pedidos = _orderService.ObtenerPedidos(columna, orden, nombreCliente);
 
                 return View(pedidos);
@@ -229,6 +232,9 @@ namespace VIPS.Web.Controllers
                 ViewBag.NombreUsuario = nombreUsuario;
                 ViewBag.RolUsuario = rolUsuario;
                 ViewBag.Patente = patente;
+
+                ViewBag.Columna = columna;
+                ViewBag.Orden = orden;
 
                 var flota = _fleetService.ObtenerFlota(columna, orden, patente);
 

@@ -29,14 +29,14 @@ namespace VIPS.Web.Services
         {
             try
             {
-                var columnasPermitidas = new[] { "idCamion", "patente", "capacidadPeso", "capacidadVolumen", "fechaCreacion", "estado" };
+                var columnasPermitidas = new[] { "idCamion", "patente", "capacidadPeso", "capacidadVolumen", "fechaCreacion", "estadoOperativo", "asignado" };
                 if (!columnasPermitidas.Contains(columna))
                     throw new ArgumentException("Columna no válida");
 
                 // Orden seguro
                 var ordenSeguro = (orden?.ToUpper() == "DESC") ? "DESC" : "ASC";
 
-                var query = $@"select idCamion, patente, capacidadPeso, capacidadVolumen, fechaCreacion, estado from Flota where eliminado = 0";
+                var query = $@"select idCamion, patente, capacidadPeso, capacidadVolumen, fechaCreacion, estadoOperativo, asignado from Flota where eliminado = 0";
 
                 if (!string.IsNullOrEmpty(patente))
                 {
@@ -76,7 +76,9 @@ namespace VIPS.Web.Services
                         CapacidadPeso = DecimalAStr(Convert.ToDecimal(row["capacidadPeso"])),
                         CapacidadVolumen = DecimalAStr(Convert.ToDecimal(row["capacidadVolumen"])),
                         FechaCreacion = Convert.ToDateTime(row["fechaCreacion"]),
-                        Estado = Convert.ToInt32(row["estado"])
+                        Estado = Convert.ToInt32(row["estadoOperativo"]),
+                        Asignado = Convert.ToInt32(row["asignado"])
+
 
                     });
                 }
@@ -101,12 +103,49 @@ namespace VIPS.Web.Services
         }
 
 
+        public async Task<List<FleetRouteModel>> GetVehiculosDisponiblesAsync()
+        {
+            try
+            {
+                var query = "select idCamion, ancho, largo, alto, capacidadPeso, capacidadVolumen, latitud, longitud from Flota f inner join DomicilioEntrega d on d.idDomicilioEntrega = f.idDomicilioInicio where f.eliminado = 0 and f.asignado = 0 and f.estadoOperativo = 1";
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                await connection.OpenAsync();
+
+                using var cmd = new SqlCommand(query, connection);
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                var lista = new List<FleetRouteModel>();
+
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new FleetRouteModel
+                    {
+                        IdCamion = reader.GetInt32(reader.GetOrdinal("idCamion")),
+                        Ancho = reader.GetDecimal(reader.GetOrdinal("ancho")),
+                        Largo = reader.GetDecimal(reader.GetOrdinal("largo")),
+                        Alto = reader.GetDecimal(reader.GetOrdinal("alto")),
+                        CapacidadPeso = reader.GetDecimal(reader.GetOrdinal("capacidadPeso")),
+                        CapacidadVolumen = reader.GetDecimal(reader.GetOrdinal("capacidadVolumen")),
+                        Latitud = reader.GetDecimal(reader.GetOrdinal("latitud")),
+                        Longitud = reader.GetDecimal(reader.GetOrdinal("longitud"))
+                    });
+                }
+
+                return lista;
+            }
+            catch (Exception ex)
+            {
+                return new List<FleetRouteModel>();
+            }
+        }
+
 
         public FleetModel? retornarFleetModelConPatente(string patente)
         {
             try
             {
-                var query = $@"select patente, ancho, largo, alto, capacidadPeso, capacidadVolumen, estado from Flota where patente = @patente and eliminado = 0";
+                var query = $@"select patente, ancho, largo, alto, capacidadPeso, capacidadVolumen, estadoOperativo from Flota where patente = @patente and eliminado = 0";
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 connection.Open();
@@ -125,7 +164,7 @@ namespace VIPS.Web.Services
                         Alto = DecimalAStr(Convert.ToDecimal(reader["alto"])),
                         CapacidadPeso = DecimalAStr(Convert.ToDecimal(reader["capacidadPeso"])),
                         CapacidadVolumen = DecimalAStr(Convert.ToDecimal(reader["capacidadVolumen"])),
-                        Estado = Convert.ToInt32(reader["estado"])
+                        Estado = Convert.ToInt32(reader["estadoOperativo"])
 
                     };
                 }
@@ -208,7 +247,7 @@ namespace VIPS.Web.Services
 
                 conn.Open();
 
-                string query = @"INSERT INTO Flota (patente, ancho, largo, alto, capacidadPeso, capacidadVolumen, estado) VALUES (@patente, @ancho, @largo, @alto, @capacidadPeso, @capacidadVolumen, @estado)";
+                string query = @"INSERT INTO Flota (patente, ancho, largo, alto, capacidadPeso, capacidadVolumen, estadoOperativo) VALUES (@patente, @ancho, @largo, @alto, @capacidadPeso, @capacidadVolumen, @estado)";
 
                 using var cmd = new SqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@patente", fleetModel.Patente);
@@ -304,7 +343,7 @@ namespace VIPS.Web.Services
             alto = @alto,
             capacidadPeso = @capacidadPeso,
             capacidadVolumen = @capacidadVolumen,
-            estado = @estado,
+            estadoOperativo = @estado,
             fechaModificacion = GETDATE()
         WHERE patente = @patente AND eliminado = 0";
 

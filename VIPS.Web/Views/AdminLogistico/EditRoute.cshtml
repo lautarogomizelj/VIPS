@@ -1,0 +1,134 @@
+﻿@{
+	 Layout = "_AdminLogisticoLayout";
+	 string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+
+<div class="contenedorGestionRutas">
+
+
+    <!-- Rutas generadas -->
+    <div class="route-cards">
+        <!-- Ruta 1 -->
+        <div class="route-card">
+            <div class="route-header">
+                <div class="route-title">
+                    <div class="route-badge">Ruta #001</div>
+                    <span class="route-status status-pending">Sin Asignar</span>
+                </div>
+            </div>
+
+            <!-- Sección 1: Detalles de la ruta -->
+            <div class="section">
+                <h3 class="section-title">
+                    📋 Detalles de la Ruta
+                </h3>
+                <div class="table-container">
+                    <table>
+                        <thead class="table-header">
+                            <tr>
+                                <th>ID Ruta</th>
+                                <th>Patente</th>
+                                <th>Fecha Creación</th>
+                                <th>Cantidad Pedidos</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="id-badge">001</span></td>
+                                <td><span class="patent-code">ABC123</span></td>
+                                <td>25/09/2025 14:30</td>
+                                <td><span class="count-badge">5</span></td>
+                                <td><span class="route-status status-pending">Sin Asignar</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sección 2: Pedidos asignados -->
+            <div class="section">
+                <h3 class="section-title">
+                    📦 Pedidos Asignados (Orden de Entrega)
+                </h3>
+                <div class="orders-list">
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-id">PED-001</span>
+                            <span class="delivery-order">1º Entrega</span>
+                        </div>
+                        <div class="order-details">
+                            <div class="client-info">
+                                <h4>María González</h4>
+                                <p>Cliente Premium</p>
+                            </div>
+                            <div class="address-info">
+                                📍 Av. Corrientes 1234, CABA, Buenos Aires
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-id">PED-002</span>
+                            <span class="delivery-order">2º Entrega</span>
+                        </div>
+                        <div class="order-details">
+                            <div class="client-info">
+                                <h4>Carlos Rodríguez</h4>
+                                <p>Cliente Regular</p>
+                            </div>
+                            <div class="address-info">
+                                📍 San Martín 567, Vicente López, Buenos Aires
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span class="order-id">PED-003</span>
+                            <span class="delivery-order">3º Entrega</span>
+                        </div>
+                        <div class="order-details">
+                            <div class="client-info">
+                                <h4>Ana Martínez</h4>
+                                <p>Cliente VIP</p>
+                            </div>
+                            <div class="address-info">
+                                📍 Libertad 890, San Isidro, Buenos Aires
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 3: Asignar conductor -->
+            <div class="section">
+                <h3 class="section-title">
+                    👤 Asignar Conductor
+                </h3>
+                <div class="driver-assignment">
+                    <div class="assignment-form">
+                        <div class="form-group">
+                            <label for="driver-select-001">Conductor Disponible:</label>
+                            <select id="driver-select-001">
+                                <option value="">Seleccionar conductor...</option>
+                                <option value="1">Juan Pérez - Licencia: A2, B1</option>
+                                <option value="2">Miguel Torres - Licencia: A1, B1, C1</option>
+                                <option value="3">Roberto Silva - Licencia: B1, C1, D1</option>
+                            </select>
+                        </div>
+                        <button class="assign-btn" onclick="assignDriver('001')">
+                            👤 Asignar Conductor
+                        </button>
+                    </div>
+                    <div id="alert-001" class="alert"></div>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+
+</div>

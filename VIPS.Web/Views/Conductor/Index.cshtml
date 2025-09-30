@@ -1,7 +1,81 @@
-﻿@{
+﻿@model VIPS.Web.Models.RouteViewModel
+
+@{
     Layout = "_ConductorLayout";
-    string lang = User.FindFirst("Lang")?.Value ?? "es";
+	string lang = User.FindFirst("Lang")?.Value ?? "es";
+
+    
+
 }
+
+@if (Model == null)
+{
+
+<div class="contenedorGestionRutas">
+
+    <div class="contenedorResultadoRutas">
+        <div class="result-container">
+            <div class="status-icon error">
+                📋
+            </div>
+
+            <h2 class="result-title error">
+                @(lang == "es" ? "No hay rutas disponibles" : "No routes available")
+            </h2>
+
+            <p class="result-message">
+                @(lang == "es" ? "Actualmente no hay rutas sin asignar en el sistema." : "There are currently no unassigned routes in the system.")
+            </p>
+
+            <div class="result-details error">
+                <div class="detail-item">
+                    <span class="detail-label">
+                        @(lang == "es" ? "Estado:" : "Status:")
+                    </span>
+                    <span class="detail-value error">
+                        @(lang == "es" ? "Sin rutas pendientes" : "No pending routes")
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">
+                        @(lang == "es" ? "Acción recomendada:" : "Recommended action:")
+                    </span>
+                    <span class="detail-value">
+                        @(lang == "es" ? "Generar nuevas rutas" : "Generate new routes")
+                    </span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a asp-action="RouteManagement" asp-controller="AdminLogistico" class="btn btn-secondary">
+                    🏠 @(lang == "es" ? "Volver al Dashboard" : "Back to Dashboard")
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+}
+else
+{
+
+    var url = "https://www.google.com/maps/dir/";
+    var cantTotal = 0;
+    var cantCompletados = 0;
+
+    // Agrego el punto de partida primero
+    if (ViewBag.PuntoPartidaActual != null)
+    {
+        url += Uri.EscapeDataString(ViewBag.PuntoPartidaActual) + "/";
+    }
+
+    // Luego agrego todos los pedidos
+    foreach (var pedido in ViewBag.Pedidos)
+    {
+        url += Uri.EscapeDataString(pedido.Direccion) + "/";
+        cantTotal = pedido.CantTotal;
+        cantCompletados = pedido.CantCompletados;
+    }
 
 
 <div class="main-content">
@@ -11,106 +85,141 @@
         <div class="route-info">
             <div class="info-item">
                 <span class="info-label">@(lang == "es" ? "Ruta" : "Route")</span>
-                <span class="info-value">#12 – @(lang == "es" ? "Camión" : "Truck") 4</span>
+                <span class="info-value">#@Model.IdRuta.ToString("D3") – @(lang == "es" ? "Camión" : "Truck") @Model.Patente</span>
             </div>
             <div class="info-item">
                 <span class="info-label">@(lang == "es" ? "Fecha" : "Date")</span>
-                <span class="info-value">23/09/2025</span>
+                <span class="info-value">@Model.FechaCreacion.ToString("dd/MM/yyyy")</span>
             </div>
             <div class="info-item">
                 <span class="info-label">@(lang == "es" ? "Pedidos" : "Orders")</span>
-                <span class="info-value">15</span>
+                <span class="info-value">@Model.CantPedidos</span>
             </div>
             <div class="info-item">
                 <span class="info-label">@(lang == "es" ? "Estado" : "Status")</span>
-                <span class="status-badge status-en-curso">@(lang == "es" ? "En curso" : "In progress")</span>
+                <span class="route-status @(
+                    Model.Estado== "Pendiente" ? "status-pending" :
+                    Model.Estado== "En camino" ? "status-en-camino" :
+                    Model.Estado== "Finalizada" ? "status-finalizada" :
+                    Model.Estado== "Cancelada" ? "status-cancelada" :
+                    Model.Estado== "Sin Asignar" ? "status-entregado" : "status-sin-asignar")">
+                    @Model.Estado
+                </span>
             </div>
         </div>
 
-        <button class="map-button">🗺️ @(lang == "es" ? "Ver mapa completo" : "View full map")</button>
+        <a href="@url" target="_blank" class="map-button">🗺️ @(lang == "es" ? "Ver mapa completo" : "View full map")</a>
+        <a asp-action="ExportarRutaAGpxConductor" asp-controller="Conductor" asp-route-idRuta="Model.IdRuta" class="btn btn-primary">
+            📡 Exportar a gpx
+        </a>
     </div>
 
     <div class="orders-section">
-        <div class="orders-title">@(lang == "es" ? "Lista de pedidos (orden ascendente)" : "Order list (ascending order)")</div>
+        <div class="orders-title">@(lang == "es" ? "📦 Pedidos Asignados (Orden de Entrega)" : "📦 Order list (delivery order)")</div>
+
+        @foreach (var pedido in ViewBag.Pedidos)
+        {
 
         <div class="order-item">
-            <div class="order-header" onclick="toggleDetails(1)">
-                <div class="order-number">1</div>
-                <div class="order-status status-pendiente">@(lang == "es" ? "Pendiente" : "Pending")</div>
-                <div class="order-info">
-                    <div class="order-address">Av. Rivadavia 4521</div>
-                    <div class="order-client">@(lang == "es" ? "Cliente" : "Client"): Juan Pérez</div>
+            <div class="order-header" onclick="toggleDetails(@pedido.OrdenEntrega)">
+                <div class="order-number">@pedido.OrdenEntrega</div>
+                <div class="order-status">
+                    <span class="route-status @(
+    pedido.Estado == "Pendiente" ? "status-pending" :
+    pedido.Estado == "Programado" ? "status-programado" :
+    pedido.Estado == "Reprogramado" ? "status-reprogramado" :
+    pedido.Estado == "En camino" ? "status-en-camino-pedido" :
+    pedido.Estado == "Fallido" ? "status-fallido" :
+    pedido.Estado == "Entregado" ? "status-entregado" :
+    "status-pending")">
+                        @pedido.Estado
+                    </span>
                 </div>
-                <div class="expand-icon" id="icon-1">▼</div>
+
+                <div class="order-info">
+                    <div class="order-address">@pedido.Direccion</div>
+                    <div class="order-client">@pedido.Cliente</div>
+                </div>
+                <div class="expand-icon" id="icon-@pedido.OrdenEntrega">▼</div>
             </div>
-            <div class="order-details" id="details-1">
+
+            <div class="order-details" id="details-@pedido.OrdenEntrega">
                 <div class="detail-item">
                     <span class="detail-label">@(lang == "es" ? "Tel" : "Phone"):</span>
-                    <span class="detail-value">1123456789</span>
+                    <span class="detail-value">@pedido.TelefonoCliente</span>
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">@(lang == "es" ? "Observaciones" : "Notes"):</span>
-                    <span class="detail-value">entregar en portería</span>
+                    <span class="detail-value"></span>
                 </div>
-                <div class="action-buttons">
-                    <button class="btn-entregado">✓ @(lang == "es" ? "Entregado" : "Delivered")</button>
-                    <button class="btn-fallido">✗ @(lang == "es" ? "Fallido" : "Failed")</button>
-                </div>
-            </div>
-        </div>
 
-        <div class="order-item">
-            <div class="order-header" onclick="toggleDetails(2)">
-                <div class="order-number">2</div>
-                <div class="order-status status-pendiente">@(lang == "es" ? "Pendiente" : "Pending")</div>
-                <div class="order-info">
-                    <div class="order-address">Calle San Martín 2350</div>
-                    <div class="order-client">@(lang == "es" ? "Cliente" : "Client"): María López</div>
-                </div>
-                <div class="expand-icon" id="icon-2">▼</div>
-            </div>
-            <div class="order-details" id="details-2">
-                <div class="detail-item">
-                    <span class="detail-label">@(lang == "es" ? "Info adicional" : "Additional info"):</span>
-                    <span class="detail-value">Timbre 3°B</span>
-                </div>
+                @if(@pedido.Estado != "Entregado" && @pedido.Estado != "Fallido")
+                    {
                 <div class="action-buttons">
-                    <button class="btn-entregado">✓ @(lang == "es" ? "Entregado" : "Delivered")</button>
-                    <button class="btn-fallido">✗ @(lang == "es" ? "Fallido" : "Failed")</button>
+                    <a class="btn-entregado" asp-action="MarcarEntregaEntregada" asp-controller="Conductor" asp-route-idPedido="@pedido.IdPedido" asp-route-idRuta="@Model.IdRuta">✓ @(lang == "es" ? "Entregado" : "Delivered")</a>
+                    <a class="btn-fallido" asp-action="MarcarEntregaFallida" asp-controller="Conductor" asp-route-idPedido="@pedido.IdPedido" asp-route-idRuta="@Model.IdRuta">✗  @(lang == "es" ? "Fallido" : "Failed")</a>
                 </div>
+                    }
             </div>
         </div>
+        }
 
-        <div class="order-item">
-            <div class="order-header" onclick="toggleDetails(3)">
-                <div class="order-number">3</div>
-                <div class="order-status status-entregado">@(lang == "es" ? "Entregado" : "Delivered")</div>
-                <div class="order-info">
-                    <div class="order-address">Av. Corrientes 1500</div>
-                    <div class="order-client">@(lang == "es" ? "Cliente" : "Client"): Pedro González</div>
-                </div>
-                <div class="expand-icon" id="icon-3">▼</div>
-            </div>
-            <div class="order-details" id="details-3">
-                <div class="detail-item">
-                    <span class="detail-label">@(lang == "es" ? "Info adicional" : "Additional info"):</span>
-                    <span class="detail-value">Local "Kiosco Azul"</span>
-                </div>
-                <div class="detail-item" style="color: #10b981; font-weight: 500;">
-                    ✓ @(lang == "es" ? "Entregado exitosamente" : "Successfully delivered")
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <div class="summary-footer">
         <div class="progress-info">
-            @(lang == "es" ? "Pedidos completados" : "Completed orders"): <span class="progress-count">1/15</span>
+            @(lang == "es" ? "Pedidos completados" : "Completed orders"): <span class="progress-count">@cantCompletados/@cantTotal</span>
         </div>
-        <button class="finalize-button">@(lang == "es" ? "Finalizar ruta" : "Finish route")</button>
+
+
+        @if(Model.Estado != "En camino")
+        {
+        <a class="finalize-button enabled" asp-action="IniciarRuta" asp-controller="Conductor" asp-route-idRuta="@Model.IdRuta">@(lang == "es" ? "Iniciar ruta" : "Start route")</a>
+        }
+        else if(cantCompletados == cantTotal)
+        {
+
+        <a class="finalize-button enabled" asp-action="FinalizarRuta" asp-controller="Conductor" asp-route-idRuta="@Model.IdRuta">@(lang == "es" ? "Finalizar ruta" : "Finish route")</a>
+        }
+        else
+        {
+        <a class="finalize-button">@(lang == "es" ? "Finalizar ruta" : "Finish route")</a>
+        }
     </div>
+
+    <!-- CAJA DE ÉXITO -->
+    @if (!string.IsNullOrEmpty(TempData["SuccessMessageConductorRuta"]?.ToString()))
+{
+    <div class="success-box">
+        <div class="success-icon">✅</div>
+        <div class="success-content">
+            <div class="success-title">@(lang == "es" ? "Operación exitosa" : "Successful operation")</div>
+            <div class="success-message">@TempData["SuccessMessageConductorRuta"]</div>
+        </div>
+    </div>
+}
+
+    <!-- CAJA DE ERROR -->
+    @if (!string.IsNullOrEmpty(TempData["ErrorMessageConductorRuta"]?.ToString()))
+{
+    <div class="error-box">
+        <div class="error-icon">⚠️</div>
+        <div class="error-content">
+            <div class="error-title">@(lang == "es" ? "Error" : "Error")</div>
+            <div class="error-message">@TempData["ErrorMessageConductorRuta"]</div>
+        </div>
+    </div>
+}
+
+
 </div>
 
-@section Scripts {
-    <script src="~/js/app.js"></script>
 }
+
+
+
+
+    @section Scripts {
+        <script src="~/js/app.js"></script>
+    }

@@ -7,9 +7,9 @@
 
     <div class="filtrosContenedor">
 
-        <form method="get" asp-controller="AdminGeneral" asp-action="SystemLogs" class="FILTER" style="width:500px;">
+        <form method="get" asp-controller="AdminGeneral" asp-action="SystemLogs" class="FILTER">
 
-            <div class="contenedor-info">
+            <div class="group">
                 <label for="columna"><h4>@(lang == "es" ? "Columna:" : "Column:")</h4></label>
                 <select id="columna" name="columna">
                     <option value="idLogActividad" selected="@(ViewBag.Columna == "idLogActividad" ? "selected" : null)">
@@ -28,6 +28,9 @@
                         @(lang == "es" ? "Detalle" : "Details")
                     </option>
                 </select>
+            </div>
+
+            <div class="group">
 
                 <label for="orden"><h4>@(lang == "es" ? "Orden:" : "Order:")</h4></label>
                 <select id="orden" name="orden">
@@ -40,7 +43,7 @@
                 </select>
             </div>
 
-            <div class="contenedor-info">
+            <div class="group">
 
                 <label for="cantLogs"><h4>@(lang == "es" ? "Cantidad de registros:" : "Number of Records:")</h4></label>
                 <select id="cantLogs" name="cantLogs">
@@ -52,20 +55,23 @@
             </div>
 
 
-            <div class="contenedor-info">
-                <label for="detalle"><h4>@(lang == "es" ? "Accion:" : "Action:")</h4></label>
+            <div class="group">
+                <label for="detalle"><h4>@(lang == "es" ? "Escriba accion:" : "Write action:")</h4></label>
                 <input type="text" id="detalle" name="detalle" class="form-control" value="@ViewBag.Detalle" />
             </div>
 
-            <div class="contenedor-info">
-                <button class="btn-principal filtros" type="submit">@(lang == "es" ? "Aplicar filtros" : "Apply Filters")</button>
+            <div class="group-btn">
+                <button class="btn filtros" type="submit">@(lang == "es" ? "🔍 Aplicar filtros" : "🔍 Apply Filters")</button>
+
+                <a class="btn exportar" asp-controller="AdminGeneral" asp-action="ExportarLogsPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" asp-route-cantLogs="@ViewBag.CantLogs" asp-route-detalle="@ViewBag.Detalle">
+                    @(lang == "es" ? "📄 Exportar a pdf" : "📄 Export to PDF")
+                </a>
+
             </div>
 
         </form>
 
-        <a class="btn-principal filtros" asp-controller="AdminGeneral" asp-action="ExportarLogsPdf" asp-route-columna="@ViewBag.Columna" asp-route-orden="@ViewBag.Orden" asp-route-cantLogs="@ViewBag.CantLogs" asp-route-detalle="@ViewBag.Detalle">
-            @(lang == "es" ? "Exportar a pdf" : "Export to PDF")
-        </a>
+        
     </div>
 
     <table>
@@ -86,9 +92,9 @@
         @foreach (var log in Model)
     {
         <tr>
-            <td>@log.idLogActividad</td>
-            <td>@log.Usuario</td>
-            <td>@log.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+            <td><span class="id-badge">@log.idLogActividad</span></td>
+            <td><span class="patent-code">@log.Usuario</span></td>
+            <td><span class="date-value">@log.FechaHora.ToString("dd/MM/yyyy HH:mm")</span></td>
             <td>@log.Accion</td>
             <td>@log.Detalle</td>
         </tr>

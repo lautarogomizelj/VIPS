@@ -8,5 +8,6 @@ namespace VIPS.Web.Models
         public int CantPedidos { get; set; }
         public string Estado { get; set; }
         public int IdCamion { get; set; }
+        public string? NombreCompletoConductor { get; set; }
     }
 }

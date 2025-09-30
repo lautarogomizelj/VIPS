@@ -88,6 +88,7 @@ namespace VIPS.Web.Controllers
                     rol = reader["rol"].ToString();
                     string idiomaInterfaz = reader["idiomaInterfaz"].ToString();
 
+
                     if (_hashService.VerifyPassword(password, hashFromDb))
                     {
 
@@ -96,6 +97,8 @@ namespace VIPS.Web.Controllers
 
                         // Resetear intentos fallidos y actualizar fechas
                         await ActualizarUsuarioLoginExitoso(username);
+
+                        idiomaInterfaz = string.IsNullOrEmpty(idiomaInterfaz) ? "es" : idiomaInterfaz;
 
                         // Crear claims y cookie de autenticación
                         var claims = new List<Claim>

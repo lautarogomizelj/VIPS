@@ -11,6 +11,7 @@ using System.Reflection.Metadata;
 using PdfSharpCore.Pdf;
 using PdfSharpCore.Drawing;
 using System.IO;
+using System.Text;
 
 
 
@@ -84,6 +85,233 @@ namespace VIPS.Web.Controllers
             }
         }
 
+
+        [HttpGet]
+        public async Task<IActionResult> GenerateRoutes()
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+           
+            var resultado = await _routeService.GenerateRoutesAsync();
+
+            if (resultado.Exito)
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Generacion de rutas", "Se generaron " + resultado.CantidadRutasGeneradas + " rutas", ipAddress);
+
+            }
+            else
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Generacion de rutas", "Hubo un error al generar rutas. Codigo de error: " + resultado.CodigoError, ipAddress);
+
+            }
+
+            return View(resultado);
+
+
+
+
+            // Llama al servicio que envía el JSON de prueba a Vroom
+            //var resultadoJson = await _routeService.GetRouteAsync();
+
+            // Devuelve la respuesta directamente como JSON
+            //return Content(resultadoJson, "application/json");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AssignDriver()
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+            
+            var rutas = await _routeService.ObtenerRutasSinAsignarAsync();
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            ViewBag.Conductores    = await _userService.ObtenerConductoresDisponiblesAsync();
+            ViewBag.PedidosPorRuta = await _orderService.ObtenerPedidosPorRutaAsync();
+
+            return View(rutas);
+
+
+            // Llama al servicio que envía el JSON de prueba a Vroom
+            //var resultadoJson = await _routeService.GetRouteAsync();
+
+            // Devuelve la respuesta directamente como JSON
+            //return Content(resultadoJson, "application/json");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AsignarConductor(int idRuta, int idConductor, string patente)
+        {
+            if (idRuta <= 0 || idConductor <= 0)
+            {
+                TempData["ErrorMessageAssignDriver"] = "Debe seleccionar un conductor válido.";
+                return RedirectToAction("AssignDriver");
+            }
+
+            string enlace = Url.Action("Index", "Conductor", null, Request.Scheme);
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+
+            var exito = await _routeService.AsignarConductorAsync(idRuta, idConductor, patente, enlace);
+
+            if (exito)
+            {
+                TempData["SuccessAsignarConductor"] = "Conductor asignado correctamente.";
+
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Asignacion de conductor", "Se asigno el conductor con id: "+ idConductor + " al camion con patente " + patente, ipAddress);
+            }
+            else
+            {
+                TempData["ErrorMessageAssignDriver"] = "No se pudo asignar el conductor. Verifique los datos.";
+            }
+
+
+            return RedirectToAction("AssignDriver");
+        }
+
+
+        public async Task<IActionResult> ShowRoute(string idRuta)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.idRuta = idRuta;
+
+            var puntoPartida = _routeService.obtenerPuntoPartidaActual();
+            ViewBag.PuntoPartidaActual = puntoPartida.Direccion;
+
+            ViewBag.Pedidos = await _orderService.ObtenerPedidosPorIdRutaAsync(idRuta);
+
+            var rutas = await _routeService.RetornarRutaConIdRuta(idRuta);
+
+            return View(rutas);
+        }
+
+        [HttpGet("EditRoute/{idRuta}")]
+        public async Task<IActionResult> EditRoute(string idRuta)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+            ViewBag.idRuta = idRuta;
+
+            return View();
+        }
+
+        [HttpGet("DeleteRoute/{idRuta}")]
+        public async Task<IActionResult> DeleteRoute(string idRuta)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.idRuta = idRuta;
+
+            return View();
+        }
+
+
+
+        [HttpPost("DeleteRoute/{idRuta}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRoute(string eleccion, string idRuta)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.idRuta = idRuta;
+
+
+            if (eleccion == "no")
+            {
+                TempData["ErrorMessageDeleteRoute"] = "Ocurrio un error.";
+
+                return View();
+            }
+
+            var rutaDb = _routeService.retornarRouteModelConIdRuta(idRuta);
+
+            if (rutaDb == null)
+            {
+                TempData["ErrorMessageDeleteRoute"] = "La ruta no existe.";
+                return View();
+            }
+
+
+            var resultado = _routeService.EliminarRoute(idRuta);
+
+
+            if (!resultado.Exito)
+            {
+                // Mostrar error en la misma vista
+                TempData["ErrorMessageDeleteRoute"] = $"Error al cancelar ruta: {resultado.Mensaje}";
+            }
+
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Edicion ruta", nombreUsuario + " Cancelo la ruta con id: " + idRuta, ipAddress);
+
+            TempData["SuccessDeleteMessage"] = $"Ruta con id '{idRuta}' cancelada correctamente";
+
+            return View();
+        }
+
+        [HttpGet("ExportarRutaAGpx/{idRuta}")]
+        public async Task<IActionResult> ExportarRutaAGpx(string idRuta)
+        {
+            var puntoPartida = _routeService.obtenerPuntoPartidaActual();
+
+            var pedidos = await _orderService.ObtenerPedidosPorIdRutaAsync(idRuta);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>");
+            sb.AppendLine("<gpx version=\"1.1\" creator=\"VIPS\" xmlns=\"http://www.topografix.com/GPX/1/1\">");
+
+            // Punto de partida
+            sb.AppendLine($"  <wpt lat=\"{puntoPartida.Latitud}\" lon=\"{puntoPartida.Longitud}\">");
+            sb.AppendLine("    <name>Punto de Partida</name>");
+            sb.AppendLine("  </wpt>");
+
+            // Waypoints de pedidos
+            foreach (var pedido in pedidos)
+            {
+                sb.AppendLine($"  <wpt lat=\"{pedido.Latitud}\" lon=\"{pedido.Longitud}\">");
+                sb.AppendLine($"    <name>Pedido {pedido.IdPedido} - {pedido.Direccion}</name>");
+                sb.AppendLine("  </wpt>");
+            }
+
+            sb.AppendLine("</gpx>");
+
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar rutas a gpx", "Se creo un archivo gpx con ruta con id" + idRuta, ipAddress);
+
+            var gpxBytes = Encoding.UTF8.GetBytes(sb.ToString());
+            return File(gpxBytes, "application/gpx+xml", "ruta_logistica.gpx");
+        }
+
+
         [HttpGet]
         public IActionResult OrderManagement(string columna = "fechaCreacion", string orden = "desc", string? nombreCliente = null)
         {
@@ -147,7 +375,63 @@ namespace VIPS.Web.Controllers
             ViewBag.NombreUsuario = nombreUsuario;
             ViewBag.RolUsuario = rolUsuario;
 
+            var puntoPartida = _routeService.obtenerPuntoPartidaActual();
+            ViewBag.PuntoPartidaActual = puntoPartida.Direccion;
+
+
+
             return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GuardarPuntoPartida(string DomicilioPartida, string CiudadPartida, string ProvinciaPartida)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            try
+            {
+                // Validaciones básicas: que no estén vacíos
+                if (string.IsNullOrWhiteSpace(DomicilioPartida) ||
+                    string.IsNullOrWhiteSpace(CiudadPartida) ||
+                    string.IsNullOrWhiteSpace(ProvinciaPartida)) 
+                {
+                    TempData["ErrorMessageDeparturePoint"] = "Todos los campos obligatorios deben ser completados.";
+                    return RedirectToAction("MyAccount");
+                }
+
+
+                // Espera a que se complete la tarea
+                ResultadoOperacion resultado = await _orderService.CambiarPuntoPartidaFlota(DomicilioPartida, CiudadPartida, ProvinciaPartida);
+
+
+                if (!resultado.Exito)
+                {
+                    // Mostrar error en la misma vista
+                    TempData["ErrorMessageDeparturePoint"] = resultado.Mensaje;
+
+                    return RedirectToAction("MyAccount");
+                }
+
+                string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Modificacion punto partida flota", "Se cambio el punto de partida de los camiones", ipAddress);
+
+                TempData["SuccessMessageDeparturePoint"] = resultado.Mensaje;
+                return RedirectToAction("MyAccount");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessageDeparturePoint"] = $"Error interno del servidor: {ex.Message}";
+                return RedirectToAction("MyAccount");
+            }
+
+
+            return RedirectToAction("MyAccount");
         }
 
         [HttpPost]
@@ -205,15 +489,7 @@ namespace VIPS.Web.Controllers
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> GenerarRuta()
-        {
-            // Llama al servicio que envía el JSON de prueba a Vroom
-            var resultadoJson = await _routeService.GetRouteAsync();
-
-            // Devuelve la respuesta directamente como JSON
-            return Content(resultadoJson, "application/json");
-        }
+        
 
         /*+-----------------------------ABM FLEET-----------------------------------------*/
         /*---------------GET-------------*/
@@ -512,6 +788,18 @@ namespace VIPS.Web.Controllers
                 return File(pdfBytes, "application/pdf", "ReporteFlota.pdf");
         }
 
+
+        public IActionResult ExportarRutasPdf(string columna = "r.fechaCreacion", string orden = "desc")
+        {
+            var pdfBytes = _routeService.ExportarRutasPdf(columna, orden);
+
+            // Agregar log de exportación (opcional)
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar rutas", "Exportación de tabla ruta", ipAddress);
+
+            return File(pdfBytes, "application/pdf", "ReporteRutas.pdf");
+        }
 
     }
 }

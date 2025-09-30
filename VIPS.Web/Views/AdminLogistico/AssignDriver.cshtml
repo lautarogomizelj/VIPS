@@ -1,0 +1,198 @@
+﻿@model List<RouteViewModel>
+
+    @{
+	 Layout = "_AdminLogisticoLayout";
+	 string lang = User.FindFirst("Lang")?.Value ?? "es";
+    }
+
+
+               <div class="contenedorGestionRutas">
+
+
+                   @if (Model == null || !Model.Any())
+    {
+
+                   <div class="contenedorResultadoRutas">
+                       <div class="result-container">
+                           <div class="status-icon error">
+                               📋
+                           </div>
+
+                           <h2 class="result-title error">
+                               @(lang == "es" ? "No hay rutas disponibles" : "No routes available")
+                           </h2>
+
+                           <p class="result-message">
+                               @(lang == "es" ? "Actualmente no hay rutas sin asignar en el sistema." : "There are currently no unassigned routes in the system.")
+                           </p>
+
+                           <div class="result-details error">
+                               <div class="detail-item">
+                                   <span class="detail-label">
+                                       @(lang == "es" ? "Estado:" : "Status:")
+                                   </span>
+                                   <span class="detail-value error">
+                                       @(lang == "es" ? "Sin rutas pendientes" : "No pending routes")
+                                   </span>
+                               </div>
+                               <div class="detail-item">
+                                   <span class="detail-label">
+                                       @(lang == "es" ? "Acción recomendada:" : "Recommended action:")
+                                   </span>
+                                   <span class="detail-value">
+                                       @(lang == "es" ? "Generar nuevas rutas" : "Generate new routes")
+                                   </span>
+                               </div>
+                           </div>
+
+                           <div class="actions">
+                               <a asp-action="RouteManagement" asp-controller="AdminLogistico" class="btn btn-secondary">
+                                   🏠 @(lang == "es" ? "Volver al Dashboard" : "Back to Dashboard")
+                               </a>
+                           </div>
+                       </div>
+                   </div>
+
+    }
+    else
+    {
+
+
+
+
+ <!-- Rutas generadas -->
+               <div class="route-cards">
+
+
+                   @foreach (var ruta in Model)
+            {
+                <!-- Ruta 1 -->
+                   <div class="route-card">
+                       <div class="route-header">
+                           <div class="route-title">
+                               <div class="route-badge">
+                                   @(lang == "es" ? "Ruta" : "Route") #@ruta.IdRuta.ToString("D3")
+                               </div>
+                               <span class="route-status status-pending">@ruta.Estado</span>
+                           </div>
+                       </div>
+
+                       <!-- Sección 1: Detalles de la ruta -->
+                       <div class="section">
+                           <h3 class="section-title">
+                               📋 @(lang == "es" ? "Detalles de la Ruta" : "Route Details")
+                           </h3>
+                           <div class="table-container">
+                               <table>
+                                   <thead class="table-header">
+                                       <tr>
+                                           <th>@(lang == "es" ? "ID Ruta" : "Route ID")</th>
+                                           <th>@(lang == "es" ? "Patente" : "License Plate")</th>
+                                           <th>@(lang == "es" ? "Fecha Creación" : "Creation Date")</th>
+                                           <th>@(lang == "es" ? "Cantidad Pedidos" : "Order Quantity")</th>
+                                           <th>@(lang == "es" ? "Estado" : "Status")</th>
+                                       </tr>
+                                   </thead>
+                                   <tbody>
+                                       <tr>
+                                           <td><span class="id-badge">@ruta.IdRuta.ToString("D3")</span></td>
+                                           <td><span class="patent-code">@ruta.Patente</span></td>
+                                           <td>@ruta.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                           <td><span class="count-badge">@ruta.CantPedidos</span></td>
+                                           <td><span class="route-status status-pending">@ruta.Estado</span></td>
+                                       </tr>
+                                   </tbody>
+                               </table>
+                           </div>
+                       </div>
+
+                       <!-- Sección 2: Pedidos asignados -->
+                       <div class="section">
+                           <h3 class="section-title">
+                               📦 @(lang == "es" ? "Pedidos Asignados (Orden de Entrega)" : "Assigned Orders (Delivery Order)")
+                           </h3>
+                           <div class="orders-list">
+
+                               @if (ViewBag.PedidosPorRuta.ContainsKey(ruta.IdRuta))
+                            {
+                                foreach (var pedido in ViewBag.PedidosPorRuta[ruta.IdRuta])
+                                {
+                               <div class="order-item">
+                                   <div class="order-header">
+                                       <span class="order-id">PED-@pedido.IdPedido.ToString("D3")</span>
+                                       <span class="delivery-order">
+                                           @pedido.OrdenEntrega @(lang == "es" ? "º Entrega" : "º Delivery")
+                                       </span>
+                                   </div>
+                                   <div class="order-details">
+                                       <div class="client-info">
+                                           <h4>@pedido.Cliente</h4>
+                                       </div>
+                                       <div class="address-info">
+                                           📍 @pedido.Direccion
+                                       </div>
+                                   </div>
+                               </div>
+                                }
+                            }
+
+
+                           </div>
+                       </div>
+
+                       <!-- Sección 3: Asignar conductor -->
+                       <div class="section">
+                           <h3 class="section-title">
+                               👤 @(lang == "es" ? "Asignar Conductor" : "Assign Driver")
+                           </h3>
+
+                           <div class="driver-assignment">
+                               <form asp-action="AsignarConductor" asp-controller="AdminLogistico" method="post" class="assignment-form">
+                                   <input type="hidden" name="idRuta" value="@ruta.IdRuta" />
+                                   <input type="hidden" name="patente" value="@ruta.Patente" />
+
+                                   <div class="form-group">
+                                       <label for="driver-select-001">Conductor Disponible:</label>
+
+                                       <select id="driver-select-001" name="idConductor">
+                                           <option value="0">
+                                               @(lang == "es" ? "Seleccionar conductor..." : "Select driver...")
+                                           </option>
+
+                                           @foreach (var conductor in ViewBag.Conductores)
+                                        {
+                                           <option value="@conductor.IdConductor">
+                                               @conductor.Nombre
+                                           </option>
+                                        }
+                                       </select>
+                                   </div>
+
+                                   <button class="assign-btn" type="submit">
+                                       👤 @(lang == "es" ? "Asignar Conductor" : "Assign Driver")
+                                   </button>
+                               </form>
+
+                               @if (TempData["ErrorMessageAssignDriver"] != null)
+                            {
+                               <div class="alert alert-danger">
+                                   <p style="color:red;">❌ @TempData["ErrorMessageAssignDriver"]</p>
+                               </div>
+                            }
+                           </div>
+                       </div>
+
+
+                   </div>
+
+            }
+                   <div class="actions">
+                       <a asp-action="RouteManagement" asp-controller="AdminLogistico" class="btn btn-secondary">
+                           ← Volver al Panel
+                       </a>
+                   </div>
+
+
+               </div>
+    }
+               </div>

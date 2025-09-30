@@ -1,16 +1,16 @@
 @{
-    Layout = "_AdminVentasLayout";
+    Layout = "_AdminLogisticoLayout";
     string lang = User.FindFirst("Lang")?.Value ?? "es";
 }
 
-<form asp-action="DeleteClient" asp-controller="AdminVentas" method="post" class="CRUD">
-    <h3>@(lang == "es" ? "Eliminar cliente" : "Delet Client")</h3>
+<form asp-action="DeleteRoute" asp-controller="AdminLogistico" method="post" class="CRUD">
+    <h3>@(lang == "es" ? "Cancelar ruta" : "Cancel Route")</h3>
     @Html.AntiForgeryToken()
 
-    @if (TempData["ErrorMessageDeleteClient"] != null)
+    @if (TempData["ErrorMessageDeleteRoute"] != null)
    {
     <div class="alert alert-danger">
-        <p class="error">@TempData["ErrorMessageDeleteClient"]</p>
+        <p class="error">@TempData["ErrorMessageDeleteRoute"]</p>
     </div>
    }
 
@@ -21,13 +21,13 @@
     </div>
    }
 
-    <input type="hidden" value="@ViewBag.idCliente" name="idCliente"/>
+    <input type="hidden" value="@ViewBag.idRuta" name="patente" />
 
     <div class="row">
         <label for="eleccion">
             @(lang == "es"
-                ? "Desea eliminar el cliente " + ViewBag.idCliente
-                : "You wish to delete client" + ViewBag.idCliente)
+                ? "Desea cancelar la ruta con id: " + ViewBag.idRuta
+                : "You wish to cancel route with id : " + ViewBag.idRuta)
         </label>
 
         <select name="eleccion">
@@ -37,7 +37,7 @@
     </div>
 
     <button type="submit" class="btn-principal">@((lang == "es") ? "Confirmar cambios" : "Confirm Changes")</button>
-    <a class="restablecer" asp-controller="AdminVentas" asp-action="ClientManagement">@((lang == "es") ? "Volver" : "Back")</a>
+    <a class="restablecer" asp-controller="AdminLogistico" asp-action="RouteManagement">@((lang == "es") ? "Volver" : "Back")</a>
 
 
 
