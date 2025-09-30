@@ -260,7 +260,7 @@ namespace VIPS.Web.Controllers
             }
 
 
-            var resultado = _routeService.EliminarRoute(idRuta);
+            var resultado = await _routeService.EliminarRoute(idRuta);
 
 
             if (!resultado.Exito)

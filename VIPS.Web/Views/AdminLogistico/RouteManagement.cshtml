@@ -98,7 +98,7 @@
     ruta.Estado== "En camino" ? "status-en-camino" :
     ruta.Estado== "Finalizada" ? "status-finalizada" :
     ruta.Estado== "Cancelada" ? "status-cancelada" :
-    ruta.Estado== "Sin Asignar" ? "status-entregado" : "status-sin-asignar")">
+    ruta.Estado== "Sin Asignar" ? "status-sin-asignar" : "status-sin-asignar")">
                         @ruta.Estado
                     </span>
                 </td>
@@ -109,10 +109,6 @@
 
                         <a asp-controller="AdminLogistico" asp-action="ShowRoute" asp-route-idRuta="@ruta.IdRuta" class="action-btn show-btn">
                             👁️
-                        </a>
-
-                        <a asp-controller="AdminLogistico" asp-action="EditRoute" asp-route-idRuta="@ruta.IdRuta" class="action-btn edit-btn">
-                            ✏️
                         </a>
 
                         <a asp-controller="AdminLogistico" asp-action="DeleteRoute" asp-route-idRuta="@ruta.IdRuta" class="action-btn delete-btn">

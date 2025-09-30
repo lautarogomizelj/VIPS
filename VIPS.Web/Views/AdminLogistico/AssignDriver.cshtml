@@ -73,7 +73,14 @@
                                <div class="route-badge">
                                    @(lang == "es" ? "Ruta" : "Route") #@ruta.IdRuta.ToString("D3")
                                </div>
-                               <span class="route-status status-pending">@ruta.Estado</span>
+                               <span class="route-status @(
+ruta.Estado== "Pendiente" ? "status-pending" :
+ruta.Estado== "En camino" ? "status-en-camino" :
+ruta.Estado== "Finalizada" ? "status-finalizada" :
+ruta.Estado== "Cancelada" ? "status-cancelada" :
+ruta.Estado== "Sin Asignar" ? "status-sin-asignar" : "status-sin-asignar")">
+                                   @ruta.Estado 
+                               </span>
                            </div>
                        </div>
 
@@ -99,7 +106,16 @@
                                            <td><span class="patent-code">@ruta.Patente</span></td>
                                            <td>@ruta.FechaCreacion.ToString("dd/MM/yyyy")</td>
                                            <td><span class="count-badge">@ruta.CantPedidos</span></td>
-                                           <td><span class="route-status status-pending">@ruta.Estado</span></td>
+                                           <td>
+                                               <span class="route-status @(
+ruta.Estado== "Pendiente" ? "status-pending" :
+ruta.Estado== "En camino" ? "status-en-camino" :
+ruta.Estado== "Finalizada" ? "status-finalizada" :
+ruta.Estado== "Cancelada" ? "status-cancelada" :
+ruta.Estado== "Sin Asignar" ? "status-sin-asignar" : "status-sin-asignar")">
+                                                   @ruta.Estado
+                                               </span>
+                                           </td>
                                        </tr>
                                    </tbody>
                                </table>

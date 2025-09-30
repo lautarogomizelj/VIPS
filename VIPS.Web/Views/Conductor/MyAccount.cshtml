@@ -27,17 +27,17 @@
 
         @if (TempData["ErrorMessageChange"] != null)
         {
-            <div class="alert alert-danger">
-                <p style="color:red;">❌ @TempData["ErrorMessageChange"]</p>
-            </div>
+        <div class="alert alert-danger">
+            <p style="color:red;">❌ @TempData["ErrorMessageChange"]</p>
+        </div>
 
         }
 
-            @if (TempData["SuccessMessageChange"] != null)
+        @if (TempData["SuccessMessageChange"] != null)
         {
-            <div class="alert alert-success">
-                <p style="color:green;">✅ @TempData["SuccessMessageChange"]</p>
-            </div>
+        <div class="alert alert-success">
+            <p style="color:green;">✅ @TempData["SuccessMessageChange"]</p>
+        </div>
         }
 
     </div>
@@ -97,6 +97,47 @@
                 <p style="color:red;">❌ @TempData["ErrorMessageChangeLanguage"]</p>
             </div>
             }
+
+        </form>
+    </div>
+
+    <!-- Card de Licencia de Conducir -->
+    <div class="settings-card">
+        <h3 class="card-title">
+            🚗 @(lang == "es" ? "Licencia de Conducir" : "Driver's License")
+        </h3>
+        <p class="card-description">
+            @(lang == "es" ? "Sube una foto de tu licencia de conducir para mantener tu cuenta actualizada." : "Upload a photo of your driver's license to keep your account updated.")
+        </p>
+
+        <form asp-controller="Conductor" asp-action="SubirLicencia" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label for="licenciaFoto" class="form-label">
+                    @(lang == "es" ? "Selecciona el archivo" : "Select file")
+                </label>
+                <input type="file" id="licenciaFoto" name="licenciaFoto" class="form-control" accept="image/*" required />
+            </div>
+
+            <button type="submit" class="btn-principal">
+                📤 @(lang == "es" ? "Subir Licencia" : "Upload License")
+            </button>
+
+            <!-- Mensajes de resultado -->
+            @if (TempData["SuccessMessageLicense"] != null)
+        {
+            <div class="alert alert-success">
+                <p style="color:green;">✅ @TempData["SuccessMessageLicense"]</p>
+            </div>
+        }
+
+            @if (TempData["ErrorMessageLicense"] != null)
+        {
+            <div class="alert alert-danger">
+                <p style="color:red;">❌ @TempData["ErrorMessageLicense"]</p>
+            </div>
+        }
 
         </form>
     </div>

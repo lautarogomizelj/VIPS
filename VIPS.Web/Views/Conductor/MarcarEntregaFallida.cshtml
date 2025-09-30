@@ -1,0 +1,132 @@
+﻿@model VIPS.Web.Models.PedidoRutaViewModel
+
+@{
+    Layout = "_ConductorLayout";
+	string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+@if (Model == null)
+{
+<div class="contenedorGestionRutas">
+
+    <div class="contenedorResultadoRutas">
+        <div class="result-container">
+            <div class="status-icon error">
+                📋
+            </div>
+
+            <h2 class="result-title error">
+                @(lang == "es" ? "Error" : "Error")
+            </h2>
+
+            <p class="result-message">
+                @(lang == "es" ? "Actualmente no hay ningun pedido seleccionado." : "There are currently no selected order.")
+            </p>
+
+            <div class="result-details error">
+                <div class="detail-item">
+                    <span class="detail-label">
+                        @(lang == "es" ? "Estado:" : "Status:")
+                    </span>
+                    <span class="detail-value error">
+                        @(lang == "es" ? "Sin pedido seleccionado" : "No selected order")
+                    </span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a asp-action="Index" asp-controller="Conductor" class="btn btn-secondary">
+                    🏠 @(lang == "es" ? "Volver al Dashboard" : "Back to Dashboard")
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+}
+else
+{
+<div class="main-content" style="margin: 0 auto; width:1000px;">
+    <div class="header" style="border-color: #ef4444;">
+        <div class="header-title">⚠️ Reportar Falla en Entrega</div>
+        <div class="header-subtitle">Indica el motivo por el cual no se pudo completar la entrega</div>
+    </div>
+
+    <div class="order-info-box">
+        <div class="info-row">
+            <span class="info-label">Pedido</span>
+            <span class="info-value">#@Model.IdPedido.ToString("D3")</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Cliente</span>
+            <span class="info-value">@Model.Cliente</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Dirección</span>
+            <span class="info-value">@Model.Direccion</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Estado</span>
+            <span class="route-status @(
+Model.Estado== "Pendiente" ? "status-pending" :
+Model.Estado== "Programado" ? "status-programado" :
+Model.Estado== "Reprogramado" ? "status-reprogramado" :
+Model.Estado== "En camino" ? "status-en-camino-pedido" :
+Model.Estado== "Fallido" ? "status-fallido" :
+Model.Estado== "Entregado" ? "status-entregado" :
+"status-pending")">
+                @Model.Estado
+            </span>
+        </div>
+    </div>
+
+    <form class="entregarPedido" asp-action="MarcarEntregaFallida" asp-controller="Conductor" method="POST">
+        <input type="hidden" name="idPedido" value="@Model.IdPedido" />
+
+        <div class="reason-section">
+            <label for="reasonSelect" class="section-title">🚫 Motivo de la Falla *</label>
+            <select id="reasonSelect" name="motivo" required>
+                <option value="">-- Selecciona un motivo --</option>
+                <option value="No habia nadie en el domicilio">Cliente ausente</option>
+                <option value="El cliente no quiso recibir el pedido">Cliente rechazó la entrega</option>
+                <option value="No se encontró la dirección indicada">Dirección incorrecta</option>
+                <option value="No se pudo acceder al lugar (zona peligrosa, camino cerrado, etc.)">Inaccesible</option>
+                <option value="otro">Otro motivo</option>
+            </select>
+            <div class="required-note">* Campo obligatorio</div>
+        </div>
+
+        <div class="details-section" id="detailsSection" style="display:none;">
+            <label for="detailsTextarea" class="section-title">📝 Detalles Adicionales *</label>
+            <textarea id="detailsTextarea" name="detalles" placeholder="Describe con más detalle lo que sucedió..."></textarea>
+            <div class="required-note">* Campo obligatorio si eliges "Otro"</div>
+        </div>
+
+
+        <div class="action-buttons">
+            <a asp-action="Index" asp-controller="Conductor" class="btn btn-cancel">Cancelar</a>
+            <button class="btn btn-danger">✗ Reportar Falla</button>
+        </div>
+    </form>
+
+
+</div>
+
+ <!-- CAJA DE ERROR -->
+@if (!string.IsNullOrEmpty(TempData["ErrorMessageConductorRutaMarcarEntrega"]?.ToString()))
+{
+<div class="error-box">
+    <div class="error-icon">⚠️</div>
+    <div class="error-content">
+        <div class="error-title">@(lang == "es" ? "Error" : "Error")</div>
+        <div class="error-message">@TempData["ErrorMessageConductorRutaMarcarEntrega"]</div>
+    </div>
+</div>
+}
+
+
+}
+
+
+@section Scripts {
+    <script src="~/js/funcionesConductor.js"></script>
+}

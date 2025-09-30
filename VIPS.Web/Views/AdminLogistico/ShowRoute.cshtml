@@ -8,6 +8,47 @@
 
 <div class="contenedorGestionRutas">
 
+    @if (Model == null)
+{
+
+    <div class="contenedorResultadoRutas">
+        <div class="result-container">
+            <div class="status-icon error">
+                📋
+            </div>
+
+            <h2 class="result-title error">
+                @(lang == "es" ? "Error" : "Error")
+            </h2>
+
+            <p class="result-message">
+                @(lang == "es" ? "No se encontro la ruta seleccionada." : "Selected route not found.")
+            </p>
+
+            <div class="result-details error">
+                <div class="detail-item">
+                    <span class="detail-label">
+                        @(lang == "es" ? "Estado:" : "Status:")
+                    </span>
+                    <span class="detail-value error">
+                        @(lang == "es" ? "Ruta no encontrada" : "Route not found")
+                    </span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a asp-action="RouteManagement" asp-controller="AdminLogistico" class="btn btn-secondary">
+                    🏠 @(lang == "es" ? "Volver al Dashboard" : "Back to Dashboard")
+                </a>
+            </div>
+        </div>
+    </div>
+
+}
+else
+{
+
+
     <div class="route-cards">
 
         <div class="route-card">
@@ -32,7 +73,12 @@
                             <tr>
                                 <td><span class="id-badge">@Model.IdRuta.ToString("D3")</span></td>
                                 <td><span class="patent-code">@Model.Patente</span></td>
-                                <td><span class="">@Model.NombreCompletoConductor</span></td>
+                                <td>
+                                    <span class="">
+                                        @(string.IsNullOrEmpty(Model.NombreCompletoConductor) ? "" : Model.NombreCompletoConductor)
+                                    </span>
+                                </td>
+
                                 <td>@Model.FechaCreacion.ToString("dd/MM/yyyy")</td>
                                 <td><span class="count-badge">@Model.CantPedidos</span></td>
 
@@ -130,4 +176,5 @@
             </div>
         </div>
     </div>
+    }
 </div>

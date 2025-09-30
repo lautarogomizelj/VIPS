@@ -1,0 +1,123 @@
+﻿@model VIPS.Web.Models.PedidoRutaViewModel
+
+@{
+    Layout = "_ConductorLayout";
+	string lang = User.FindFirst("Lang")?.Value ?? "es";
+}
+
+@if (Model == null)
+{
+<div class="contenedorGestionRutas">
+
+    <div class="contenedorResultadoRutas">
+        <div class="result-container">
+            <div class="status-icon error">
+                📋
+            </div>
+
+            <h2 class="result-title error">
+                @(lang == "es" ? "Error" : "Error")
+            </h2>
+
+            <p class="result-message">
+                @(lang == "es" ? "Actualmente no hay ningun pedido seleccionado." : "There are currently no selected order.")
+            </p>
+
+            <div class="result-details error">
+                <div class="detail-item">
+                    <span class="detail-label">
+                        @(lang == "es" ? "Estado:" : "Status:")
+                    </span>
+                    <span class="detail-value error">
+                        @(lang == "es" ? "Sin pedido seleccionado" : "No selected order")
+                    </span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a asp-action="Index" asp-controller="Conductor" class="btn btn-secondary">
+                    🏠 @(lang == "es" ? "Volver al Dashboard" : "Back to Dashboard")
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+}
+else
+{
+
+<div class="main-content" style="margin: 0 auto; width:1000px;">
+    <div class="header">
+        <div class="header-title">📷 Comprobante de Entrega</div>
+        <div class="header-subtitle">Sube una foto del comprobante firmado</div>
+    </div>
+
+    <div class="order-info-box">
+        <div class="info-row">
+            <span class="info-label">Pedido</span>
+            <span class="info-value">#@Model.IdPedido.ToString("D3")</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Cliente</span>
+            <span class="info-value">@Model.Cliente</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Dirección</span>
+            <span class="info-value">@Model.Direccion</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Estado</span>
+            <span class="route-status @(
+Model.Estado== "Pendiente" ? "status-pending" :
+Model.Estado== "Programado" ? "status-programado" :
+Model.Estado== "Reprogramado" ? "status-reprogramado" :
+Model.Estado== "En camino" ? "status-en-camino-pedido" :
+Model.Estado== "Fallido" ? "status-fallido" :
+Model.Estado== "Entregado" ? "status-entregado" :
+"status-pending")">
+                @Model.Estado
+            </span>
+        </div>
+    </div>
+
+    <form class="entregarPedido" asp-action="MarcarEntregaEntregada" asp-controller="Conductor" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="idPedido" value="@Model.IdPedido" />
+        <div class="upload-section">
+            <div class="section-title">📸 Foto del Comprobante</div>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Toca para tomar una foto o seleccionar del archivo</div>
+                <div class="upload-hint">Formatos aceptados: JPG, PNG</div>
+            </div>
+
+            <input type="file" id="fileInput" accept="image/*" capture="environment" name="pathComprobante">
+
+            <div class="preview-container" id="previewContainer">
+                <img id="previewImage" class="preview-image" alt="Vista previa">
+                <button class="remove-image">🗑️ Eliminar foto</button>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a asp-action="Index" asp-controller="Conductor" class="btn btn-cancel">Cancelar</a>
+            <button class="btn btn-success" type="submit">✓ Confirmar Entrega</button>
+        </div>
+    </form>
+</div>
+
+
+<!-- CAJA DE ERROR -->
+@if (!string.IsNullOrEmpty(TempData["ErrorMessageConductorRutaMarcarEntrega"]?.ToString()))
+{
+<div class="error-box">
+    <div class="error-icon">⚠️</div>
+    <div class="error-content">
+        <div class="error-title">@(lang == "es" ? "Error" : "Error")</div>
+        <div class="error-message">@TempData["ErrorMessageConductorRutaMarcarEntrega"]</div>
+    </div>
+</div>
+}
+
+}
+

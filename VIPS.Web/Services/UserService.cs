@@ -622,6 +622,67 @@ namespace VIPS.Web.Services
 
 
 
+        public async Task<ResultadoOperacion> SubirLicencia(string nombreUsuario, string rutaRelativa)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString")))
+                {
+                    await conn.OpenAsync();
+
+                    // Verificar que el usuario existe
+                    string checkQuery = "SELECT COUNT(1) FROM Usuario WHERE usuario = @NombreUsuario";
+                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                    {
+                        checkCmd.Parameters.AddWithValue("@usuario", nombreUsuario);
+                        int count = (int)await checkCmd.ExecuteScalarAsync();
+                        if (count == 0)
+                        {
+                            return new ResultadoOperacion
+                            {
+                                Exito = false,
+                                Mensaje = "Usuario no encontrado."
+                            };
+                        }
+                    }
+
+                    // Actualizar la columna licensiaPath
+                    string updateQuery = "UPDATE Usuario SET licenciaPath = @Ruta WHERE usuario = @NombreUsuario";
+                    using (SqlCommand updateCmd = new SqlCommand(updateQuery, conn))
+                    {
+                        updateCmd.Parameters.AddWithValue("@Ruta", rutaRelativa);
+                        updateCmd.Parameters.AddWithValue("@usuario", nombreUsuario);
+
+                        int filasAfectadas = await updateCmd.ExecuteNonQueryAsync();
+
+                        if (filasAfectadas > 0)
+                        {
+                            return new ResultadoOperacion
+                            {
+                                Exito = true,
+                                Mensaje = "Licencia subida correctamente."
+                            };
+                        }
+                        else
+                        {
+                            return new ResultadoOperacion
+                            {
+                                Exito = false,
+                                Mensaje = "No se pudo actualizar la licencia en la base de datos."
+                            };
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ResultadoOperacion
+                {
+                    Exito = false,
+                    Mensaje = $"Error al actualizar la base de datos: {ex.Message}"
+                };
+            }
+        }
 
 
     }

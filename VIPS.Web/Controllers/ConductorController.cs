@@ -165,7 +165,7 @@ namespace VIPS.Web.Controllers
         }
 
 
-
+        //inicar ruta
         public async Task<IActionResult> IniciarRuta(string idRuta)
         {
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
@@ -174,7 +174,7 @@ namespace VIPS.Web.Controllers
 
             if (resultado.Exito)
             {
-                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Inicio de ruta", resultado.Mensaje, ipAddress);
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Inicio de ruta", "Ruta iniciada correctamente", ipAddress);
                 TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
 
             }
@@ -189,56 +189,208 @@ namespace VIPS.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> FinalizarRuta()
-        {
-            return RedirectToAction("Index");
-
-        }
-
-        public async Task<IActionResult> MarcarEntregaEntregada(string idPedido, string idRuta)
+        //finlaizar ruta
+        public async Task<IActionResult> FinalizarRuta(string idRuta)
         {
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
-            var resultado = _routeService.MarcarEntregaEntregada(idPedido);
+            var resultado = _routeService.FinalizarRuta(idRuta);
             string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
 
             if (resultado.Exito)
             {
-                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de pedido en ruta", resultado.Mensaje, ipAddress);
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de ruta", resultado.Mensaje, ipAddress);
                 TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
             }
             else
             {
-                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de pedido en ruta", resultado.Mensaje, ipAddress);
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de ruta", resultado.Mensaje, ipAddress);
                 TempData["ErrorMessageConductorRuta"] = resultado.Mensaje;
             }
 
             return RedirectToAction("Index");
+
+        }
+
+
+
+        //opciones de entrega pedido
+        //get
+        public async Task<IActionResult> MarcarEntregaEntregada(string idPedido, string idRuta)
+        {
+            // Leer claims desde la cookie
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
+
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
+
+            var pedido = _orderService.RetornarPedidoRutaViewModelConIdPedido(idPedido);
+
+
+            return View(pedido);
 
         }
 
         public async Task<IActionResult> MarcarEntregaFallida(string idPedido, string idRuta)
         {
+            // Leer claims desde la cookie
             var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
-            var resultado = _routeService.MarcarEntregaFallida(idPedido);
-            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+            var rolUsuario = User.FindFirstValue(ClaimTypes.Role);
 
-            if (resultado.Exito)
-            {
-                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de pedido en ruta", resultado.Mensaje, ipAddress);
-                TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
-            }
-            else
-            {
-                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de pedido en ruta", resultado.Mensaje, ipAddress);
-                TempData["ErrorMessageConductorRuta"] = resultado.Mensaje;
-            }
+            // Pasar al layout
+            ViewBag.NombreUsuario = nombreUsuario;
+            ViewBag.RolUsuario = rolUsuario;
 
-            return RedirectToAction("Index");
+            var pedido = _orderService.RetornarPedidoRutaViewModelConIdPedido(idPedido);
+
+
+            return View(pedido);
 
         }
 
 
+        //post
+        [HttpPost]
+        public async Task<IActionResult> MarcarEntregaEntregada(string idPedido, IFormFile pathComprobante, PedidoRutaViewModel model)
+        {
+            if (pathComprobante == null || pathComprobante.Length == 0)
+            {
+                TempData["ErrorMessageConductorRutaMarcarEntrega"] = "Debes subir un comprobante antes de confirmar la entrega.";
 
+                return View(model);
+            }
+
+            // Guardar archivo en servidor
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/comprobantes");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = $"{idPedido}_{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(pathComprobante.FileName)}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await pathComprobante.CopyToAsync(stream);
+            }
+
+            // Ruta relativa para guardar en la DB
+            var relativePath = $"/uploads/comprobantes/{fileName}";
+
+            // Llamar al servicio para marcar entrega y guardar pathComprobante
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var resultado = await _routeService.MarcarEntregaEntregada(idPedido, relativePath);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+
+            if (resultado.Exito)
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualización de estado de pedido en ruta", "Pedido marcado como entregado correctamente", ipAddress);
+                TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
+            }
+            else
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualización de estado de pedido en ruta", resultado.Mensaje, ipAddress);
+                TempData["ErrorMessageConductorRuta"] = resultado.Mensaje;
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> MarcarEntregaFallida(string idPedido,string motivo,string detalles,PedidoRutaViewModel model)
+        {
+            // Validar motivo obligatorio
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                TempData["ErrorMessageConductorRutaMarcarEntrega"] = "Debes seleccionar un motivo de falla.";
+                return View(model);
+            }
+
+            // Validar detalles si se eligió "otro"
+            if (motivo == "otro" && string.IsNullOrWhiteSpace(detalles))
+            {
+                TempData["ErrorMessageConductorRutaMarcarEntrega"] = "Debes completar los detalles adicionales.";
+                return View(model);
+            }
+
+            // Combinar motivo y detalle en un solo texto para guardar
+            string motivoFinal = motivo == "otro" ? detalles : motivo;
+
+            // Llamar al servicio para marcar el pedido como fallido
+            var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+            var resultado = await _routeService.MarcarEntregaFallida(idPedido, motivoFinal);
+            string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
+
+            if (resultado.Exito)
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now,
+                    "Actualizacion de estado de pedido en ruta",
+                    "Pedido marcado como fallido correctamente", ipAddress);
+                TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
+            }
+            else
+            {
+                _logService.AgregarLog(nombreUsuario, DateTime.Now,
+                    "Actualizacion de estado de pedido en ruta",
+                    resultado.Mensaje, ipAddress);
+                TempData["ErrorMessageConductorRuta"] = resultado.Mensaje;
+            }
+
+            return RedirectToAction("Index");
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubirLicencia(IFormFile licenciaFoto)
+        {
+            if (licenciaFoto == null || licenciaFoto.Length == 0)
+            {
+                TempData["ErrorMessageLicense"] = "Por favor selecciona un archivo válido."; // O un mensaje genérico
+                return RedirectToAction("MyAccount");
+
+            }
+
+            try
+            {
+                var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
+                string extension = Path.GetExtension(licenciaFoto.FileName);
+                string fileName = $"licencia_{nombreUsuario}{extension}";
+
+                string folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "licencias");
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                string filePath = Path.Combine(folderPath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await licenciaFoto.CopyToAsync(stream);
+                }
+
+                string rutaRelativa = $"/uploads/licencias/{fileName}";
+
+                ResultadoOperacion resultado = await _userService.SubirLicencia(nombreUsuario, rutaRelativa);
+
+                // Mensaje directo del servicio
+                if (resultado.Exito)
+                {
+                    TempData["SuccessMessageLicense"] = resultado.Mensaje;
+                }
+                else
+                {
+                    TempData["ErrorMessageLicense"] = resultado.Mensaje;
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessageLicense"] = $"Error al subir la licencia: {ex.Message}";
+            }
+
+            return RedirectToAction("MyAccount");
+
+        }
 
 
 

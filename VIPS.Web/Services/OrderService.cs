@@ -143,6 +143,51 @@ namespace VIPS.Web.Services
             }
         }
 
+
+        public PedidoRutaViewModel? RetornarPedidoRutaViewModelConIdPedido(string idPedido)
+        {
+            try
+            {
+                var query = @"
+            SELECT 
+                p.idPedido,
+                c.nombre + ' ' + c.apellido as cliente,
+                d.direccion,
+                ep.descripcion as estado
+            FROM Pedido p
+            INNER JOIN DomicilioEntrega d ON d.idDomicilioEntrega = p.idDomicilioEntrega
+            inner join Cliente c on c.idCliente = p.idCliente
+            inner join EstadoPedido ep on ep.idEstado = p.idEstadoPedido
+            WHERE p.idPedido = @idPedido";
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                connection.Open();
+
+                using var cmd = new SqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("@idPedido", Convert.ToInt32(idPedido));
+
+                using var reader = cmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    return new PedidoRutaViewModel
+                    {
+                        IdPedido = reader.GetInt32(reader.GetOrdinal("idPedido")),
+                        Cliente = reader.GetString(reader.GetOrdinal("cliente")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado")),
+                    };
+                }
+
+                return null; // No encontró pedido
+            }
+            catch (Exception)
+            {
+                return null; // Manejar excepción según convenga
+            }
+        }
+
+
         public async Task<Dictionary<int, List<PedidoRuta>>> ObtenerPedidosPorRutaAsync()
         {
             try

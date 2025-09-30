@@ -123,19 +123,6 @@ namespace VIPS.Web.Services
                     }
                 }).ToList();
 
-
-                // Validar que no hay valores null o cero
-                if (vehiclesJson.Any(v => v.start.Any(c => c == 0)))
-                {
-                    Console.WriteLine("ADVERTENCIA: Algunos vehículos tienen coordenadas (0,0)");
-                }
-
-                if (jobsJson.Any(j => j.location.Any(c => c == 0)))
-                {
-                    Console.WriteLine("ADVERTENCIA: Algunos pedidos tienen coordenadas (0,0)");
-                }
-
-
                 // Armar JSON final
                 var request = new
                 {
@@ -149,12 +136,17 @@ namespace VIPS.Web.Services
                     }
                 };
 
-
-
                 // 2) Llamar a la API VROOM
                 var response = await _httpClient.PostAsJsonAsync(VroomUrl, request);
 
                 Console.WriteLine($"Status Code: {response.StatusCode}");
+
+                // Leer el contenido como string para imprimirlo
+                var resultadoJsonString1 = await response.Content.ReadAsStringAsync();
+
+                // Imprimir el JSON completo en la consola
+                Console.WriteLine("JSON devuelto por VROOM:");
+                Console.WriteLine(resultadoJsonString1);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -254,6 +246,14 @@ namespace VIPS.Web.Services
                         idRuta = (int)await cmd.ExecuteScalarAsync();
                     }
 
+                    var queryUsuario = @"UPDATE Flota SET asignado = 1 WHERE idCamion = @idFlota";
+
+                    using var cmdUsuario = new SqlCommand(queryUsuario, connection, transaction);
+                    cmdUsuario.Parameters.AddWithValue("@idFlota", route.Vehicle);
+
+                    await cmdUsuario.ExecuteNonQueryAsync();
+
+
                     // Insert de pedidos asignados a esta ruta
                     int orden = 1;
                     foreach (var step in route.Steps)
@@ -286,7 +286,7 @@ namespace VIPS.Web.Services
                     var updatePedido = @"UPDATE Pedido SET idEstadoPedido = (SELECT idEstado FROM EstadoPedido WHERE descripcion = 'Reprogramado') WHERE idPedido = @IdPedido";
 
                     using var cmd = new SqlCommand(updatePedido, connection, transaction);
-                    cmd.Parameters.AddWithValue("@IdPedido", unassigned);
+                    cmd.Parameters.AddWithValue("@IdPedido", unassigned.Id);
                     await cmd.ExecuteNonQueryAsync();
                 }
 
@@ -299,6 +299,40 @@ namespace VIPS.Web.Services
             }
         }
 
+        public Ruta? retornarRouteModelConIdRuta(string idRuta)
+        {
+            try
+            {
+                var query = $@"select idRuta, idCamion, idEstadoRuta, fechaCreacion, er.descripcion as estado from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where idRuta = @idRuta and idRuta not in (select idRuta from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where descripcion in ('Cancelada', 'Finalizada'))";
+
+                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                connection.Open();
+
+                using var cmd = new SqlCommand(query, connection);
+                cmd.Parameters.AddWithValue("@idRuta", idRuta);
+                using var reader = cmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    return new Ruta
+                    {
+                        IdRuta = Convert.ToInt32(reader["idRuta"]),
+                        IdCamion = Convert.ToInt32(reader["idCamion"]),
+                        idEstadoRuta = Convert.ToInt32(reader["idEstadoRuta"]),
+                        FechaCreacion = reader.GetDateTime(reader.GetOrdinal("fechaCreacion")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        //iniciar rutas
 
         public async Task<ResultadoOperacion> IniciarRutaAsync(string idRuta)
         {
@@ -404,42 +438,63 @@ WHERE rp.idRuta = @idRuta";
             }
         }
 
-
-
-        public Ruta? retornarRouteModelConIdRuta(string idRuta)
+        public ResultadoOperacion FinalizarRuta(string idRuta)
         {
             try
             {
-                var query = $@"select idRuta, idCamion, idEstadoRuta, fechaCreacion, er.descripcion as estado from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where idRuta = @idRuta and idRuta not in (select idRuta from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where descripcion in ('Cancelada', 'Finalizada'))";
+                using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
+                conn.Open();
 
-                using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
-                connection.Open();
+                using var cmd = new SqlCommand("sp_finalizarRuta", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
 
-                using var cmd = new SqlCommand(query, connection);
-                cmd.Parameters.AddWithValue("@idRuta", idRuta);
-                using var reader = cmd.ExecuteReader();
+                // Parámetros
+                cmd.Parameters.AddWithValue("@idRuta", Convert.ToInt32(idRuta));
 
-                if (reader.Read())
+                var errorParam = new SqlParameter("@errorMessage", SqlDbType.VarChar, 200)
                 {
-                    return new Ruta
-                    {
-                        IdRuta = Convert.ToInt32(reader["idRuta"]),
-                        IdCamion = Convert.ToInt32(reader["idCamion"]),
-                        idEstadoRuta = Convert.ToInt32(reader["idEstadoRuta"]),
-                        FechaCreacion = reader.GetDateTime(reader.GetOrdinal("fechaCreacion")),
-                        Estado = reader.GetString(reader.GetOrdinal("estado"))
-                    };
-                }
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(errorParam);
 
-                return null;
+                // Ejecutar el SP
+                cmd.ExecuteNonQuery();
+
+                // Leer mensaje de salida
+                string mensaje = errorParam.Value != DBNull.Value ? errorParam.Value.ToString() : null;
+
+
+                
+
+
+
+                return new ResultadoOperacion
+                {
+                    Exito = string.IsNullOrEmpty(mensaje), // si mensaje tiene texto, hubo error
+                    Mensaje = string.IsNullOrEmpty(mensaje) ? "Ruta finalizada correctamente" : mensaje
+                };
+            }
+            catch (SqlException ex)
+            {
+                return new ResultadoOperacion
+                {
+                    Exito = false,
+                    Mensaje = $"Error en base de datos: {ex.Message}"
+                };
             }
             catch (Exception ex)
             {
-                return null;
+                return new ResultadoOperacion
+                {
+                    Exito = false,
+                    Mensaje = $"Error inesperado: {ex.Message}"
+                };
             }
         }
 
-        public ResultadoOperacion EliminarRoute(string idRuta)
+
+
+        public async Task<ResultadoOperacion> EliminarRoute(string idRuta)
         {
             try
             {
@@ -489,7 +544,7 @@ WHERE rp.idRuta = @idRuta";
         }
 
 
-        public ResultadoOperacion MarcarEntregaFallida(string idPedido)
+        public async Task<ResultadoOperacion> MarcarEntregaFallida(string idPedido, string motivo)
         {
             try
             {
@@ -501,6 +556,7 @@ WHERE rp.idRuta = @idRuta";
 
                 // Parámetros
                 cmd.Parameters.AddWithValue("@idPedido", Convert.ToInt32(idPedido));
+                cmd.Parameters.AddWithValue("@motivoFallida", motivo); // motivo seleccionado por el conductor
 
                 var errorParam = new SqlParameter("@errorMessage", SqlDbType.VarChar, 200)
                 {
@@ -512,12 +568,77 @@ WHERE rp.idRuta = @idRuta";
                 cmd.ExecuteNonQuery();
 
                 // Leer mensaje de salida
-                string mensaje = errorParam.Value != DBNull.Value ? errorParam.Value.ToString() : "Operación finalizada";
+                // Leer mensaje de salida
+                var errorMessage = errorParam.Value as string;
+
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    return new ResultadoOperacion
+                    {
+                        Exito = false,
+                        Mensaje = errorMessage
+                    };
+                }
+
+                var listaClientes = new List<(int IdCliente, string NombreCompleto, string Email)>();
+
+                using (var clientConnection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString")))
+                {
+                    await clientConnection.OpenAsync();
+
+                    var query = @"
+SELECT c.idCliente, c.nombre + ' ' + c.apellido AS nombreCompleto, c.email
+FROM RutaPedidos rp
+INNER JOIN Pedido p ON p.idPedido = rp.idPedido
+INNER JOIN Cliente c ON c.idCliente = p.idCliente
+WHERE rp.idPedido = @idPedido";
+
+                    using (var clientCmd = new SqlCommand(query, clientConnection))
+                    {
+                        clientCmd.Parameters.AddWithValue("@idPedido", idPedido);
+
+                        using (var reader = await clientCmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                listaClientes.Add((
+                                    IdCliente: (int)reader["idCliente"],
+                                    NombreCompleto: reader["nombreCompleto"].ToString(),
+                                    Email: reader["email"].ToString()
+                                ));
+                            }
+                        }
+                    }
+                }
+
+                int totalClientes = listaClientes.Count;
+                int enviadosCorrectos = 0;
+
+                foreach (var cliente in listaClientes)
+                {
+                    string cuerpo = $@"
+<p>Hola {cliente.NombreCompleto},</p>
+<p>El pedido no ha podido entregar!</p>";
+
+                    bool enviado = await _emailService.EnviarCorreo(cliente.Email, "Alerta - Pedido fallido", cuerpo);
+
+                    if (enviado)
+                        enviadosCorrectos++;
+                }
+
+                if (enviadosCorrectos != totalClientes)
+                {
+                    return new ResultadoOperacion
+                    {
+                        Exito = true,
+                        Mensaje = "Pedido fallido correctamente, pero hubo problemas en el envío de notificacion al cliente."
+                    };
+                }
 
                 return new ResultadoOperacion
                 {
-                    Exito = string.IsNullOrEmpty(mensaje), // si mensaje tiene texto, hubo error
-                    Mensaje = string.IsNullOrEmpty(mensaje) ? "Pedido marcado como fallido correctamente" : mensaje
+                    Exito = true,
+                    Mensaje = "Pedido fallido correctamente y notificacion enviada al cliente."
                 };
             }
             catch (SqlException ex)
@@ -538,12 +659,12 @@ WHERE rp.idRuta = @idRuta";
             }
         }
 
-        public ResultadoOperacion MarcarEntregaEntregada(string idPedido)
+        public async Task<ResultadoOperacion> MarcarEntregaEntregada(string idPedido, string path)
         {
             try
             {
                 using var conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
-                conn.Open();
+                await conn.OpenAsync();
 
                 using var cmd = new SqlCommand("sp_entregarPedido", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -551,6 +672,10 @@ WHERE rp.idRuta = @idRuta";
                 // Parámetros
                 cmd.Parameters.AddWithValue("@idPedido", Convert.ToInt32(idPedido));
 
+                // Nuevo parámetro para ruta del comprobante
+                cmd.Parameters.AddWithValue("@comprobantePath", path); 
+
+
                 var errorParam = new SqlParameter("@errorMessage", SqlDbType.VarChar, 200)
                 {
                     Direction = ParameterDirection.Output
@@ -558,17 +683,81 @@ WHERE rp.idRuta = @idRuta";
                 cmd.Parameters.Add(errorParam);
 
                 // Ejecutar el SP
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
 
                 // Leer mensaje de salida
-                string mensaje = errorParam.Value != DBNull.Value ? errorParam.Value.ToString() : null;
+                var errorMessage = errorParam.Value as string;
 
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    return new ResultadoOperacion
+                    {
+                        Exito = false,
+                        Mensaje = errorMessage
+                    };
+                }
+
+                var listaClientes = new List<(int IdCliente, string NombreCompleto, string Email)>();
+
+                using (var clientConnection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString")))
+                {
+                    await clientConnection.OpenAsync();
+
+                    var query = @"
+SELECT c.idCliente, c.nombre + ' ' + c.apellido AS nombreCompleto, c.email
+FROM RutaPedidos rp
+INNER JOIN Pedido p ON p.idPedido = rp.idPedido
+INNER JOIN Cliente c ON c.idCliente = p.idCliente
+WHERE rp.idPedido = @idPedido";
+
+                    using (var clientCmd = new SqlCommand(query, clientConnection))
+                    {
+                        clientCmd.Parameters.AddWithValue("@idPedido", idPedido);
+
+                        using (var reader = await clientCmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                listaClientes.Add((
+                                    IdCliente: (int)reader["idCliente"],
+                                    NombreCompleto: reader["nombreCompleto"].ToString(),
+                                    Email: reader["email"].ToString()
+                                ));
+                            }
+                        }
+                    }
+                }
+
+                int totalClientes = listaClientes.Count;
+                int enviadosCorrectos = 0;
+
+                foreach (var cliente in listaClientes)
+                {
+                    string cuerpo = $@"
+<p>Hola {cliente.NombreCompleto},</p>
+<p>El pedido se ha entregado con exito!</p>";
+
+                    bool enviado = await _emailService.EnviarCorreo(cliente.Email, "Alerta - Pedido entregado", cuerpo);
+
+                    if (enviado)
+                        enviadosCorrectos++;
+                }
+
+                if (enviadosCorrectos != totalClientes)
+                {
+                    return new ResultadoOperacion
+                    {
+                        Exito = true,
+                        Mensaje = "Pedido entregado correctamente, pero hubo problemas en el envío de notificacion al cliente."
+                    };
+                }
 
                 return new ResultadoOperacion
                 {
-                    Exito = string.IsNullOrEmpty(mensaje), // si mensaje tiene texto, hubo error
-                    Mensaje = string.IsNullOrEmpty(mensaje) ? "Pedido entregado correctamente" : mensaje
+                    Exito = true,
+                    Mensaje = "Pedido entregado correctamente y notificacion enviada al cliente."
                 };
+
             }
             catch (SqlException ex)
             {
@@ -587,6 +776,7 @@ WHERE rp.idRuta = @idRuta";
                 };
             }
         }
+
 
 
 
@@ -730,16 +920,6 @@ WHERE rp.idRuta = @idRuta";
                         return false;
                     }
 
-                    // 2️⃣ Actualizar estado del usuario/conductor
-                    // Supongamos que hay una columna 'estado' en Usuario
-                    var queryUsuario = @"UPDATE Flota SET asignado = 1 WHERE patente = @patente";
-
-                    using var cmdUsuario = new SqlCommand(queryUsuario, connection, transaction);
-                    cmdUsuario.Parameters.AddWithValue("@patente", patente);
-
-                    await cmdUsuario.ExecuteNonQueryAsync();
-
-
                     // 3) extraer mail, y nombreCompeto de usuario rol = conductor y mandar mail diciendo que fue asignado a la ruta 
 
                     string queryMail = @"SELECT u.email, (u.nombre + ' ' + u.apellido) AS nombreCompleto FROM Usuario u INNER JOIN Rol r ON r.idRol = u.idRol INNER JOIN Ruta ru ON ru.idUsuario = u.idUsuario WHERE r.nombre = 'Conductor' AND ru.idRuta = @IdRuta";
@@ -840,7 +1020,7 @@ WHERE rp.idRuta = @idRuta";
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 await connection.OpenAsync();
 
-                var query = "SELECT r.idRuta, f.patente, r.fechaCreacion, (select count(*) from RutaPedidos where idRuta = r.idRuta) as cantPedidos, er.descripcion as estado, r.idCamion, u.nombre + ' ' + u.apellido as nombreCompleto from Ruta r inner join Flota f on f.idCamion = r.idCamion inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta inner join Usuario u on u.idUsuario = r.idUsuario where idRuta = @idRuta";
+                var query = "SELECT r.idRuta, f.patente, r.fechaCreacion, (select count(*) from RutaPedidos where idRuta = r.idRuta) as cantPedidos, er.descripcion as estado, r.idCamion, u.nombre + ' ' + u.apellido as nombreCompleto from Ruta r inner join Flota f on f.idCamion = r.idCamion inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta left join Usuario u on u.idUsuario = r.idUsuario where idRuta = @idRuta";
 
                 using var cmd = new SqlCommand(query, connection);
                 cmd.Parameters.AddWithValue("@idRuta", idRuta);
@@ -857,7 +1037,7 @@ WHERE rp.idRuta = @idRuta";
                         CantPedidos = reader.GetInt32(reader.GetOrdinal("cantPedidos")),
                         Estado = reader.GetString(reader.GetOrdinal("estado")),
                         IdCamion = reader.GetInt32(reader.GetOrdinal("idCamion")),
-                        NombreCompletoConductor = reader.GetString(reader.GetOrdinal("nombreCompleto"))
+                        NombreCompletoConductor = reader["nombreCompleto"] != DBNull.Value ? reader["nombreCompleto"].ToString() : null
                     };
                 }
             }

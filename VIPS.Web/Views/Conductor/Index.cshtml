@@ -3,9 +3,6 @@
 @{
     Layout = "_ConductorLayout";
 	string lang = User.FindFirst("Lang")?.Value ?? "es";
-
-    
-
 }
 
 @if (Model == null)
@@ -47,7 +44,7 @@
             </div>
 
             <div class="actions">
-                <a asp-action="RouteManagement" asp-controller="AdminLogistico" class="btn btn-secondary">
+                <a asp-action="Index" asp-controller="Conductor" class="btn btn-secondary">
                     🏠 @(lang == "es" ? "Volver al Dashboard" : "Back to Dashboard")
                 </a>
             </div>
@@ -153,7 +150,7 @@ else
                     <span class="detail-value"></span>
                 </div>
 
-                @if(@pedido.Estado != "Entregado" && @pedido.Estado != "Fallido")
+                @if(Model.Estado == "En camino" && pedido.Estado != "Entregado" && pedido.Estado != "Fallido")
                     {
                 <div class="action-buttons">
                     <a class="btn-entregado" asp-action="MarcarEntregaEntregada" asp-controller="Conductor" asp-route-idPedido="@pedido.IdPedido" asp-route-idRuta="@Model.IdRuta">✓ @(lang == "es" ? "Entregado" : "Delivered")</a>
@@ -173,11 +170,11 @@ else
         </div>
 
 
-        @if(Model.Estado != "En camino")
+        @if(Model.Estado == "Pendiente" && cantCompletados == 0)
         {
         <a class="finalize-button enabled" asp-action="IniciarRuta" asp-controller="Conductor" asp-route-idRuta="@Model.IdRuta">@(lang == "es" ? "Iniciar ruta" : "Start route")</a>
         }
-        else if(cantCompletados == cantTotal)
+        else if(Model.Estado == "En camino" && cantCompletados == cantTotal)
         {
 
         <a class="finalize-button enabled" asp-action="FinalizarRuta" asp-controller="Conductor" asp-route-idRuta="@Model.IdRuta">@(lang == "es" ? "Finalizar ruta" : "Finish route")</a>
@@ -188,38 +185,40 @@ else
         }
     </div>
 
-    <!-- CAJA DE ÉXITO -->
-    @if (!string.IsNullOrEmpty(TempData["SuccessMessageConductorRuta"]?.ToString()))
-{
-    <div class="success-box">
-        <div class="success-icon">✅</div>
-        <div class="success-content">
-            <div class="success-title">@(lang == "es" ? "Operación exitosa" : "Successful operation")</div>
-            <div class="success-message">@TempData["SuccessMessageConductorRuta"]</div>
-        </div>
-    </div>
-}
 
-    <!-- CAJA DE ERROR -->
-    @if (!string.IsNullOrEmpty(TempData["ErrorMessageConductorRuta"]?.ToString()))
-{
-    <div class="error-box">
-        <div class="error-icon">⚠️</div>
-        <div class="error-content">
-            <div class="error-title">@(lang == "es" ? "Error" : "Error")</div>
-            <div class="error-message">@TempData["ErrorMessageConductorRuta"]</div>
-        </div>
-    </div>
-}
 
 
 </div>
 
 }
 
+<!-- CAJA DE ÉXITO -->
+@if (!string.IsNullOrEmpty(TempData["SuccessMessageConductorRuta"]?.ToString()))
+{
+<div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-content">
+        <div class="success-title">@(lang == "es" ? "Operación exitosa" : "Successful operation")</div>
+        <div class="success-message">@TempData["SuccessMessageConductorRuta"]</div>
+    </div>
+</div>
+}
+
+<!-- CAJA DE ERROR -->
+@if (!string.IsNullOrEmpty(TempData["ErrorMessageConductorRuta"]?.ToString()))
+{
+<div class="error-box">
+    <div class="error-icon">⚠️</div>
+    <div class="error-content">
+        <div class="error-title">@(lang == "es" ? "Error" : "Error")</div>
+        <div class="error-message">@TempData["ErrorMessageConductorRuta"]</div>
+    </div>
+</div>
+}
 
 
 
-    @section Scripts {
-        <script src="~/js/app.js"></script>
-    }
+
+@section Scripts {
+    <script src="~/js/app.js"></script>
+}

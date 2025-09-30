@@ -4,7 +4,7 @@ namespace VIPS.Web.Models
     {
         public int Code { get; set; }
         public VroomSummary Summary { get; set; }
-        public List<int> Unassigned { get; set; }
+        public List<VroomJob> Unassigned { get; set; }
         public List<VroomRoute> Routes { get; set; }
     }
 
@@ -60,5 +60,12 @@ namespace VIPS.Web.Models
         public int Loading { get; set; }
         public int Solving { get; set; }
         public int Routing { get; set; }
+    }
+
+    public class VroomJob
+    {
+        public int Id { get; set; }
+        public int[] Amount { get; set; }
+        // podés agregar otras propiedades si VROOM las devuelve
     }
 }
