@@ -9,5 +9,11 @@ namespace VIPS.Web.Models
         public string Estado { get; set; }
         public int IdCamion { get; set; }
         public string? NombreCompletoConductor { get; set; }
+
+        public string? Conductor { get; set; }
+        public DateTime? FechaInicio { get; set; }
+        public DateTime? FechaFin{ get; set; }
+
+
     }
 }

@@ -175,6 +175,7 @@ else
         <a class="finalize-button enabled" asp-action="IniciarRuta" asp-controller="Conductor" asp-route-idRuta="@Model.IdRuta">@(lang == "es" ? "Iniciar ruta" : "Start route")</a>
         }
         else if(Model.Estado == "En camino" && cantCompletados == cantTotal)
+        //aca tiene que decir cantRealizados poruqe cantCompletados no incluye los fallidos, solo los entregados
         {
 
         <a class="finalize-button enabled" asp-action="FinalizarRuta" asp-controller="Conductor" asp-route-idRuta="@Model.IdRuta">@(lang == "es" ? "Finalizar ruta" : "Finish route")</a>

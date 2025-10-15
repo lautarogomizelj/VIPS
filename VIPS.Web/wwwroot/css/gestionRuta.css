@@ -34,6 +34,7 @@
         padding-bottom: 20px;
         border-bottom: 3px solid #4f46e5;
         gap: 15px;
+        width:100%;
     }
 
     .contenedorGestionRutas .route-badge {

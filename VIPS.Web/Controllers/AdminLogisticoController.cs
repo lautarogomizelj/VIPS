@@ -243,6 +243,7 @@ namespace VIPS.Web.Controllers
             // Pasar al layout
             ViewBag.idRuta = idRuta;
 
+            Console.WriteLine("idruta: " + idRuta);
 
             if (eleccion == "no")
             {
@@ -255,7 +256,7 @@ namespace VIPS.Web.Controllers
 
             if (rutaDb == null)
             {
-                TempData["ErrorMessageDeleteRoute"] = "La ruta no existe.";
+                TempData["ErrorMessageDeleteRoute"] = "No se puede cancelar una ruta finalizada";
                 return View();
             }
 

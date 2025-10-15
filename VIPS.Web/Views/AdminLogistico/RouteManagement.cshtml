@@ -73,8 +73,11 @@
 
             <tr>
                 <th>@(lang == "es" ? "ID Ruta" : "Route ID")</th>
+                <th>@(lang == "es" ? "Conductor" : "Driver")</th>
                 <th>@(lang == "es" ? "Patente" : "License Plate")</th>
                 <th>@(lang == "es" ? "Fecha Creación" : "Creation Date")</th>
+                <th>@(lang == "es" ? "Fecha Inicio" : "Start Date")</th>
+                <th>@(lang == "es" ? "Fecha Fin" : "Finish Date")</th>
                 <th>@(lang == "es" ? "Cant. Pedidos" : "Order Quantity")</th>
                 <th>@(lang == "es" ? "Estado" : "Status")</th>
                 <th>@(lang == "es" ? "Acciones" : "Actions")</th>
@@ -88,8 +91,12 @@
     {
             <tr>
                 <td> <span class="id-badge">@ruta.IdRuta</span></td>
+                <td> <span class="patent-code">@((ruta.Conductor ?? "-"))</span></td>
                 <td> <span class="patent-code">@ruta.Patente</span></td>
                 <td> <span class="date-value">@ruta.FechaCreacion.ToString("dd/MM/yyyy")</span></td>
+                <td> <span class="date-value">@(ruta.FechaInicio?.ToString("dd/MM/yyyy") ?? "-")</span></td>
+                <td> <span class="date-value">@(ruta.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</span></td>
+
                 <td> <span class="numeric-value">@ruta.CantPedidos</span></td>
 
                 <td>

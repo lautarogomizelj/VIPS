@@ -29,7 +29,7 @@ namespace VIPS.Web.Services
 
 
         // URL de VROOM en la VM o host remoto
-        private const string VroomUrl = "http://192.168.68.117:3000/solve";
+        private const string VroomUrl = "http://192.168.68.112:3000/solve";
 
         public RouteService(HttpClient httpClient, IConfiguration configuration, FleetService fleetService, OrderService orderService, EmailService emailService)
         {
@@ -53,7 +53,7 @@ namespace VIPS.Web.Services
                 // Orden seguro
                 var ordenSeguro = (orden?.ToUpper() == "DESC") ? "DESC" : "ASC";
 
-                var query = $@"SELECT r.idRuta, f.patente,r.fechaCreacion,(SELECT COUNT(*) FROM RutaPedidos RP WHERE RP.idRuta = r.idRuta) AS cantidadPedidos, er.descripcion AS estado, f.idCamion FROM Ruta r INNER JOIN Flota f ON r.idCamion = f.idCamion INNER JOIN EstadoRuta er ON er.idEstadoRuta = r.idEstadoRuta order by {columna} {ordenSeguro}";
+                var query = $@"SELECT r.idRuta, u.usuario as conductor, f.patente,r.fechaCreacion, r.fechaInicio ,r.fechaFin,(SELECT COUNT(*) FROM RutaPedidos RP WHERE RP.idRuta = r.idRuta) AS cantidadPedidos, er.descripcion AS estado, f.idCamion FROM Ruta r INNER JOIN Flota f ON r.idCamion = f.idCamion INNER JOIN EstadoRuta er ON er.idEstadoRuta = r.idEstadoRuta INNER JOIN Usuario u on u.idUsuario = r.idUsuario order by {columna} {ordenSeguro}";
 
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
@@ -68,10 +68,12 @@ namespace VIPS.Web.Services
 
 
 
+
                 var lista = new List<RouteViewModel>();
 
                 foreach (DataRow row in dataTable.Rows)
                 {
+
 
                     lista.Add(new RouteViewModel
                     {
@@ -80,7 +82,12 @@ namespace VIPS.Web.Services
                         FechaCreacion = Convert.ToDateTime(row["fechaCreacion"]),
                         CantPedidos = Convert.ToInt32(row["cantidadPedidos"]),
                         Estado = row["estado"].ToString(),
-                        IdCamion = Convert.ToInt32(row["idCamion"])
+                        IdCamion = Convert.ToInt32(row["idCamion"]),
+                        Conductor = row["conductor"] != DBNull.Value ? row["conductor"].ToString() : (String?)null,
+                        FechaInicio = row["fechaInicio"] != DBNull.Value ? Convert.ToDateTime(row["fechaInicio"]) : (DateTime?)null,
+                        FechaFin = row["fechaFin"] != DBNull.Value ? Convert.ToDateTime(row["fechaFin"]) : (DateTime?)null
+
+
 
                     });
                 }
@@ -303,7 +310,7 @@ namespace VIPS.Web.Services
         {
             try
             {
-                var query = $@"select idRuta, idCamion, idEstadoRuta, fechaCreacion, er.descripcion as estado from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where idRuta = @idRuta and idRuta not in (select idRuta from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where descripcion in ('Cancelada', 'Finalizada'))";
+                var query = $@"select idRuta, idCamion, r.idEstadoRuta, fechaCreacion, er.descripcion as estado from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where idRuta = @idRuta and idRuta not in (select idRuta from Ruta r inner join EstadoRuta er on er.idEstadoRuta = r.idEstadoRuta where descripcion in ('Cancelada', 'Finalizada'))";
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
                 connection.Open();
@@ -587,7 +594,7 @@ WHERE rp.idRuta = @idRuta";
                     await clientConnection.OpenAsync();
 
                     var query = @"
-SELECT c.idCliente, c.nombre + ' ' + c.apellido AS nombreCompleto, c.email
+SELECT distinct c.idCliente, c.nombre + ' ' + c.apellido AS nombreCompleto, c.email
 FROM RutaPedidos rp
 INNER JOIN Pedido p ON p.idPedido = rp.idPedido
 INNER JOIN Cliente c ON c.idCliente = p.idCliente
@@ -738,6 +745,7 @@ WHERE rp.idPedido = @idPedido";
 <p>El pedido se ha entregado con exito!</p>";
 
                     bool enviado = await _emailService.EnviarCorreo(cliente.Email, "Alerta - Pedido entregado", cuerpo);
+
 
                     if (enviado)
                         enviadosCorrectos++;
@@ -1000,6 +1008,8 @@ WHERE rp.idPedido = @idPedido";
                         IdCamion = reader.GetInt32(reader.GetOrdinal("idCamion"))
                     });
                 }
+
+
             }
             catch (Exception ex)
             {
@@ -1092,51 +1102,76 @@ WHERE rp.idPedido = @idPedido";
 
         public byte[] ExportarRutasPdf(string columna = "r.fechaCreacion", string orden = "desc")
         {
-            // Traer las rutas ordenadas
             var rutas = ObtenerRutas(columna, orden);
 
             using (var ms = new MemoryStream())
             {
                 PdfDocument document = new PdfDocument();
                 var page = document.AddPage();
+                page.Orientation = PdfSharp.PageOrientation.Landscape;
                 XGraphics gfx = XGraphics.FromPdfPage(page);
-                XFont font = new XFont("Verdana", 10, XFontStyle.Regular);
 
-                // Posiciones iniciales
-                double startX = 40;
+                // Usamos una fuente más chica para que entre todo
+                XFont font = new XFont("Verdana", 8, XFontStyle.Regular);
+                XFont headerFont = new XFont("Verdana", 8, XFontStyle.Bold);
+
+                double startX = 20;
                 double startY = 50;
-                double rowHeight = 20;
+                double rowHeight = 18;
 
-                // Dibujar encabezado
-                gfx.DrawString("ID Ruta", font, XBrushes.Black, new XRect(startX, startY, 60, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Patente", font, XBrushes.Black, new XRect(startX + 60, startY, 80, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Cant. Pedidos", font, XBrushes.Black, new XRect(startX + 140, startY, 80, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Fecha Creación", font, XBrushes.Black, new XRect(startX + 220, startY, 100, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Estado", font, XBrushes.Black, new XRect(startX + 320, startY, 80, rowHeight), XStringFormats.Center);
+                // Anchos ajustados para entrar en ~780 px (A4 horizontal ~842)
+                double[] colWidths = { 40, 90, 60, 60, 80, 80, 80, 70 };
 
-                // Línea debajo del encabezado
-                gfx.DrawLine(XPens.Black, startX, startY + rowHeight, startX + 400, startY + rowHeight);
+                string[] headers =
+                {
+            "ID Ruta",
+            "Conductor",
+            "Patente",
+            "Pedidos",
+            "Creación",
+            "Inicio",
+            "Fin",
+            "Estado"
+        };
 
-                // Dibujar filas
+                // Cabecera
+                double currentX = startX;
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    gfx.DrawString(headers[i], headerFont, XBrushes.Black,
+                        new XRect(currentX, startY, colWidths[i], rowHeight), XStringFormats.Center);
+                    currentX += colWidths[i];
+                }
+
+                // Línea debajo de encabezado
+                gfx.DrawLine(XPens.Black, startX, startY + rowHeight, startX + colWidths.Sum(), startY + rowHeight);
+
                 double y = startY + rowHeight;
                 foreach (var ruta in rutas)
                 {
+                    currentX = startX;
                     y += rowHeight;
-                    gfx.DrawString(ruta.IdRuta.ToString(), font, XBrushes.Black, new XRect(startX, y, 60, rowHeight), XStringFormats.Center);
-                    gfx.DrawString(ruta.Patente, font, XBrushes.Black, new XRect(startX + 60, y, 80, rowHeight), XStringFormats.Center);
-                    gfx.DrawString(ruta.CantPedidos.ToString(), font, XBrushes.Black, new XRect(startX + 140, y, 80, rowHeight), XStringFormats.Center);
-                    gfx.DrawString(ruta.FechaCreacion.ToString("dd/MM/yyyy"), font, XBrushes.Black, new XRect(startX + 220, y, 100, rowHeight), XStringFormats.Center);
-                    gfx.DrawString(ruta.Estado, font, XBrushes.Black, new XRect(startX + 320, y, 80, rowHeight), XStringFormats.Center);
 
-                    // Línea debajo de la fila
-                    gfx.DrawLine(XPens.Gray, startX, y + rowHeight, startX + 400, y + rowHeight);
-                }
+                    // Datos de la fila
+                    string[] valores =
+                    {
+                ruta.IdRuta.ToString(),
+                ruta.Conductor ?? "-",
+                ruta.Patente ?? "-",
+                ruta.CantPedidos.ToString(),
+                ruta.FechaCreacion.ToString("dd/MM/yyyy"),
+                ruta.FechaInicio?.ToString("dd/MM/yyyy") ?? "-",
+                ruta.FechaFin?.ToString("dd/MM/yyyy") ?? "-",
+                ruta.Estado ?? "-"
+            };
 
-                // Guardar PDF en memoria
-                document.Save(ms, false);
-                return ms.ToArray();
-            }
-        }
+                    for (int i = 0; i < valores.Length; i++)
+                    {
+                        gfx.DrawString(valores[i], font, XBrushes.Black,
+                            new XRect(currentX, y, colWidths[i], rowHeight), XStringFormats.Center);
+                        currentX += colWidths[i];
+                    }
 
-    }
+                    gfx.DrawLine(XPens.Gray, startX, y + rowHeight, startX + colWidths.Sum(), y
+        
 }
