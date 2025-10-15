@@ -29,7 +29,7 @@ namespace VIPS.Web.Services
 
 
         // URL de VROOM en la VM o host remoto
-        private const string VroomUrl = "http://192.168.68.112:3000/solve";
+        private const string VroomUrl = "http://172.16.244.155:3000/solve";
 
         public RouteService(HttpClient httpClient, IConfiguration configuration, FleetService fleetService, OrderService orderService, EmailService emailService)
         {
@@ -53,7 +53,7 @@ namespace VIPS.Web.Services
                 // Orden seguro
                 var ordenSeguro = (orden?.ToUpper() == "DESC") ? "DESC" : "ASC";
 
-                var query = $@"SELECT r.idRuta, u.usuario as conductor, f.patente,r.fechaCreacion, r.fechaInicio ,r.fechaFin,(SELECT COUNT(*) FROM RutaPedidos RP WHERE RP.idRuta = r.idRuta) AS cantidadPedidos, er.descripcion AS estado, f.idCamion FROM Ruta r INNER JOIN Flota f ON r.idCamion = f.idCamion INNER JOIN EstadoRuta er ON er.idEstadoRuta = r.idEstadoRuta INNER JOIN Usuario u on u.idUsuario = r.idUsuario order by {columna} {ordenSeguro}";
+                var query = $@"SELECT r.idRuta, u.usuario as conductor, f.patente,r.fechaCreacion, r.fechaInicio ,r.fechaFin,(SELECT COUNT(*) FROM RutaPedidos RP WHERE RP.idRuta = r.idRuta) AS cantidadPedidos, er.descripcion AS estado, f.idCamion FROM Ruta r INNER JOIN Flota f ON r.idCamion = f.idCamion INNER JOIN EstadoRuta er ON er.idEstadoRuta = r.idEstadoRuta LEFT JOIN Usuario u on u.idUsuario = r.idUsuario order by {columna} {ordenSeguro}";
 
 
                 using var connection = new SqlConnection(_configuration.GetConnectionString("MainConnectionString"));
@@ -110,10 +110,11 @@ namespace VIPS.Web.Services
                 // 1) Armar JSON de solicitud
                 // Traer vehículos disponibles
                 var vehiculos = await _fleetService.GetVehiculosDisponiblesAsync();
-                var vehiclesJson = vehiculos.Select(v => new {
+                var vehiclesJson = vehiculos.Select(v => new
+                {
                     id = v.IdCamion,
                     profile = "car",
-                    start = new[] { v.Longitud, v.Latitud},
+                    start = new[] { v.Longitud, v.Latitud },
                     capacity = new[] { (int)v.CapacidadPeso, (int)v.CapacidadVolumen }, // ENTEROS
                     dimensions = new[] { v.Largo, v.Ancho, v.Alto }
                 }).ToList();
@@ -121,10 +122,11 @@ namespace VIPS.Web.Services
                 // Traer pedidos pendientes o reprogramados
                 var pedidos = await _orderService.GetPedidosPendientesAsync();
                 // Mapear a JSON para VROOM, incluyendo peso y volumen
-                var jobsJson = pedidos.Select(p => new {
+                var jobsJson = pedidos.Select(p => new
+                {
                     id = p.IdPedido,
-                    location = new[] { p.Longitud, p.Latitud},
-                    amount = new[] { 
+                    location = new[] { p.Longitud, p.Latitud },
+                    amount = new[] {
                         (int)p.Peso,                             // peso en kg
                         (int)p.Largo * (int)p.Ancho * (int)p.Alto           // volumen en m³
                     }
@@ -471,7 +473,7 @@ WHERE rp.idRuta = @idRuta";
                 string mensaje = errorParam.Value != DBNull.Value ? errorParam.Value.ToString() : null;
 
 
-                
+
 
 
 
@@ -680,7 +682,7 @@ WHERE rp.idPedido = @idPedido";
                 cmd.Parameters.AddWithValue("@idPedido", Convert.ToInt32(idPedido));
 
                 // Nuevo parámetro para ruta del comprobante
-                cmd.Parameters.AddWithValue("@comprobantePath", path); 
+                cmd.Parameters.AddWithValue("@comprobantePath", path);
 
 
                 var errorParam = new SqlParameter("@errorMessage", SqlDbType.VarChar, 200)
@@ -848,7 +850,7 @@ WHERE rp.idPedido = @idPedido";
                 return idEstado;
             }
 
-            return -1; 
+            return -1;
         }
         public async Task<string> GetRouteAsync()
         {
@@ -956,7 +958,7 @@ WHERE rp.idPedido = @idPedido";
                     string cuerpo = $@"<p>Hola {nombreCompleto},</p><p>Se te ha asignado una nueva ruta de entrega.</p><p>Puedes verla en el siguiente enlace:</p><p><a href='{enlace}'>{enlace}</a></p>";
 
                     // 6️⃣ Enviar correo
-                    bool enviado = await _emailService.EnviarCorreo(correo,"Alerta - Asignación de Ruta",cuerpo);
+                    bool enviado = await _emailService.EnviarCorreo(correo, "Alerta - Asignación de Ruta", cuerpo);
 
                     if (!enviado)
                     {
@@ -1099,7 +1101,6 @@ WHERE rp.idPedido = @idPedido";
             return ruta;
         }
 
-
         public byte[] ExportarRutasPdf(string columna = "r.fechaCreacion", string orden = "desc")
         {
             var rutas = ObtenerRutas(columna, orden);
@@ -1108,10 +1109,9 @@ WHERE rp.idPedido = @idPedido";
             {
                 PdfDocument document = new PdfDocument();
                 var page = document.AddPage();
-                page.Orientation = PdfSharp.PageOrientation.Landscape;
+                page.Orientation = PdfSharpCore.PageOrientation.Landscape;
                 XGraphics gfx = XGraphics.FromPdfPage(page);
 
-                // Usamos una fuente más chica para que entre todo
                 XFont font = new XFont("Verdana", 8, XFontStyle.Regular);
                 XFont headerFont = new XFont("Verdana", 8, XFontStyle.Bold);
 
@@ -1119,20 +1119,8 @@ WHERE rp.idPedido = @idPedido";
                 double startY = 50;
                 double rowHeight = 18;
 
-                // Anchos ajustados para entrar en ~780 px (A4 horizontal ~842)
                 double[] colWidths = { 40, 90, 60, 60, 80, 80, 80, 70 };
-
-                string[] headers =
-                {
-            "ID Ruta",
-            "Conductor",
-            "Patente",
-            "Pedidos",
-            "Creación",
-            "Inicio",
-            "Fin",
-            "Estado"
-        };
+                string[] headers = { "ID Ruta", "Conductor", "Patente", "Pedidos", "Creación", "Inicio", "Fin", "Estado" };
 
                 // Cabecera
                 double currentX = startX;
@@ -1143,16 +1131,14 @@ WHERE rp.idPedido = @idPedido";
                     currentX += colWidths[i];
                 }
 
-                // Línea debajo de encabezado
                 gfx.DrawLine(XPens.Black, startX, startY + rowHeight, startX + colWidths.Sum(), startY + rowHeight);
 
                 double y = startY + rowHeight;
+
                 foreach (var ruta in rutas)
                 {
                     currentX = startX;
-                    y += rowHeight;
 
-                    // Datos de la fila
                     string[] valores =
                     {
                 ruta.IdRuta.ToString(),
@@ -1172,6 +1158,15 @@ WHERE rp.idPedido = @idPedido";
                         currentX += colWidths[i];
                     }
 
-                    gfx.DrawLine(XPens.Gray, startX, y + rowHeight, startX + colWidths.Sum(), y
-        
+                    gfx.DrawLine(XPens.Gray, startX, y + rowHeight, startX + colWidths.Sum(), y + rowHeight);
+                    y += rowHeight;
+                }
+
+                document.Save(ms, false);
+                return ms.ToArray();
+            }
+        }
+
+
+    }
 }

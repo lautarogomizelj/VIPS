@@ -80,6 +80,8 @@ namespace VIPS.Web.Services
         {
             try
             {
+                ip = (ip == "::1") ? "127.0.0.1" : ip;
+
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("MainConnectionString")))
                 {
                     conn.Open();

@@ -590,39 +590,118 @@ namespace VIPS.Web.Controllers
             using (var ms = new MemoryStream())
             {
                 PdfDocument document = new PdfDocument();
-                var page = document.AddPage();
+
+                // Página inicial
+                PdfPage page = document.AddPage();
+                page.Orientation = PdfSharpCore.PageOrientation.Landscape;
                 XGraphics gfx = XGraphics.FromPdfPage(page);
                 XFont font = new XFont("Verdana", 10, XFontStyle.Regular);
 
-                // Posiciones iniciales
                 double startX = 40;
                 double startY = 50;
                 double rowHeight = 20;
+                double marginTop = 50;
+                double marginBottom = 50;
+                double usableHeight = page.Height - marginTop - marginBottom;
 
-                // Dibujar encabezado
-                gfx.DrawString("Id log Actividad", font, XBrushes.Black, new XRect(startX, startY, 80, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Usuario", font, XBrushes.Black, new XRect(startX + 80, startY, 60, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Fecha y hora", font, XBrushes.Black, new XRect(startX + 140, startY, 100, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Accion", font, XBrushes.Black, new XRect(startX + 240, startY, 100, rowHeight), XStringFormats.Center);
-                gfx.DrawString("Detalle", font, XBrushes.Black, new XRect(startX + 340, startY, 180, rowHeight), XStringFormats.Center);
+                // Columnas
+                double[] columnWidths = { 80, 100, 120, 150, 250 }; // Id, Usuario, FechaHora, Accion, Detalle
+                string[] headers = { "Id log Actividad", "Usuario", "Fecha y hora", "Accion", "Detalle" };
 
-                // Línea debajo del encabezado
-                gfx.DrawLine(XPens.Black, startX, startY + rowHeight, startX + 520, startY + rowHeight);
+                // Función auxiliar para dividir texto en líneas según ancho
+                List<string> DividirTexto(string texto, double ancho)
+                {
+                    var palabras = texto.Split(' ');
+                    var lineas = new List<string>();
+                    string lineaActual = "";
 
-                // Dibujar filas
-                double y = startY + rowHeight;
+                    foreach (var palabra in palabras)
+                    {
+                        string prueba = string.IsNullOrEmpty(lineaActual) ? palabra : lineaActual + " " + palabra;
+                        var size = gfx.MeasureString(prueba, font);
+                        if (size.Width > ancho)
+                        {
+                            if (!string.IsNullOrEmpty(lineaActual))
+                                lineas.Add(lineaActual);
+                            lineaActual = palabra;
+                        }
+                        else
+                        {
+                            lineaActual = prueba;
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(lineaActual))
+                        lineas.Add(lineaActual);
+
+                    return lineas;
+                }
+
+                // Función para dibujar encabezado en la página actual
+                void DibujarEncabezado()
+                {
+                    double x = startX;
+                    for (int i = 0; i < headers.Length; i++)
+                    {
+                        gfx.DrawString(headers[i], font, XBrushes.Black, new XRect(x, marginTop, columnWidths[i], rowHeight), XStringFormats.Center);
+                        x += columnWidths[i];
+                    }
+                    gfx.DrawLine(XPens.Black, startX, marginTop + rowHeight, startX + columnWidths.Sum(), marginTop + rowHeight);
+                }
+
+                DibujarEncabezado();
+
+                double y = marginTop + rowHeight;
+
                 foreach (var log in logs)
                 {
-                    y += rowHeight;
-                    gfx.DrawString(log.idLogActividad, font, XBrushes.Black, new XRect(startX, y, 80, rowHeight), XStringFormats.Center);
-                    gfx.DrawString(log.Usuario, font, XBrushes.Black, new XRect(startX + 80, y, 60, rowHeight), XStringFormats.Center);
-                    gfx.DrawString(log.FechaHora.ToString("dd/MM/yyyy"), font, XBrushes.Black, new XRect(startX + 140, y, 100, rowHeight), XStringFormats.Center);
-                    gfx.DrawString(log.Accion, font, XBrushes.Black, new XRect(startX + 240, y, 100, rowHeight), XStringFormats.Center);
-                    gfx.DrawString(log.Detalle ?? "-", font, XBrushes.Black, new XRect(startX + 340, y, 180, rowHeight), XStringFormats.Center);
+                    var lineasAccion = DividirTexto(log.Accion ?? "-", columnWidths[3]);
+                    var lineasDetalle = DividirTexto(log.Detalle ?? "-", columnWidths[4]);
+                    int maxLineas = Math.Max(lineasAccion.Count, lineasDetalle.Count);
+                    double requiredHeight = rowHeight * maxLineas;
 
+                    // Nueva página si no cabe
+                    if (y + requiredHeight > usableHeight)
+                    {
+                        page = document.AddPage();
+                        page.Orientation = PdfSharpCore.PageOrientation.Landscape;
+                        gfx = XGraphics.FromPdfPage(page);
+                        DibujarEncabezado();
+                        y = marginTop + rowHeight;
+                    }
 
-                    // Línea debajo de la fila
-                    gfx.DrawLine(XPens.Gray, startX, y + rowHeight, startX + 520, y + rowHeight);
+                    double yStart = y;
+
+                    for (int i = 0; i < maxLineas; i++)
+                    {
+                        double x = startX;
+
+                        // Id, Usuario, Fecha solo en la primera línea
+                        if (i == 0)
+                        {
+                            gfx.DrawString(log.idLogActividad, font, XBrushes.Black, new XRect(x, yStart, columnWidths[0], rowHeight), XStringFormats.Center);
+                            x += columnWidths[0];
+                            gfx.DrawString(log.Usuario, font, XBrushes.Black, new XRect(x, yStart, columnWidths[1], rowHeight), XStringFormats.Center);
+                            x += columnWidths[1];
+                            gfx.DrawString(log.FechaHora.ToString("dd/MM/yyyy HH:mm"), font, XBrushes.Black, new XRect(x, yStart, columnWidths[2], rowHeight), XStringFormats.Center);
+                            x += columnWidths[2];
+                        }
+                        else
+                        {
+                            x += columnWidths[0] + columnWidths[1] + columnWidths[2];
+                        }
+
+                        if (i < lineasAccion.Count)
+                            gfx.DrawString(lineasAccion[i], font, XBrushes.Black, new XRect(x, yStart, columnWidths[3], rowHeight), XStringFormats.Center);
+                        x += columnWidths[3];
+
+                        if (i < lineasDetalle.Count)
+                            gfx.DrawString(lineasDetalle[i], font, XBrushes.Black, new XRect(x, yStart, columnWidths[4], rowHeight), XStringFormats.Center);
+
+                        yStart += rowHeight;
+                    }
+
+                    y += requiredHeight;
+                    gfx.DrawLine(XPens.Gray, startX, y, startX + columnWidths.Sum(), y);
                 }
 
                 // Guardar PDF en memoria y devolver al navegador
@@ -630,11 +709,15 @@ namespace VIPS.Web.Controllers
 
                 var nombreUsuario = User.FindFirstValue(ClaimTypes.Name);
                 string ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP desconocida";
-                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar logs", "Exportacion de tabla logs", ipAddress);
+
+                _logService.AgregarLog(nombreUsuario, DateTime.Now, "Exportar logs", "Exportación de tabla logs", ipAddress);
 
                 return File(ms.ToArray(), "application/pdf", "ReporteLogs.pdf");
             }
         }
+
+
+
 
         public IActionResult ExportarPedidosPdf(string columna = "fechaCreacion", string orden = "desc", string? nombreCliente = null)
         {

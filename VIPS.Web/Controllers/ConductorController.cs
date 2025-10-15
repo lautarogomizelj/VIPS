@@ -200,11 +200,14 @@ namespace VIPS.Web.Controllers
             {
                 _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de ruta", resultado.Mensaje, ipAddress);
                 TempData["SuccessMessageConductorRuta"] = resultado.Mensaje;
+
             }
             else
             {
                 _logService.AgregarLog(nombreUsuario, DateTime.Now, "Actualizacion de estado de ruta", resultado.Mensaje, ipAddress);
                 TempData["ErrorMessageConductorRuta"] = resultado.Mensaje;
+
+
             }
 
             return RedirectToAction("Index");
